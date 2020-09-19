@@ -5,8 +5,8 @@ import pandas as pd
 
 
 from algorithm.nlp.tf.v1.bert.bert_models import BertTrainer
-from util.data.split import train_test_split_from_data_frame
-from util.data.label import encode_labels
+from util.data_helper import train_test_split_from_data_frame
+from util.label_helper import encode_labels
 
 
 
