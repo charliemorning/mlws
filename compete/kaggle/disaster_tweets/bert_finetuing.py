@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 
 
-from algorithm.nlp.tf.v1.bert.bert_models import BertTrainer
+from algorithm.nlp.bert.tf1x.bert_models import BertTrainer
 from util.data_helper import train_test_split_from_data_frame
 from util.label_helper import encode_labels
 
