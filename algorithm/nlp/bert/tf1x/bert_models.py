@@ -7,9 +7,9 @@ import tensorflow as tf
 
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
-import algorithm.nlp.tf.v1.bert.modeling as modeling
-import algorithm.nlp.tf.v1.bert.optimization as optimization
-import algorithm.nlp.tf.v1.bert.tokenization as tokenization
+import algorithm.nlp.bert.tf1x.modeling as modeling
+import algorithm.nlp.bert.tf1x.optimization as optimization
+import algorithm.nlp.bert.tf1x.tokenization as tokenization
 
 tf.logging.set_verbosity(tf.logging.INFO)
 import logging
@@ -938,15 +938,11 @@ if __name__ == '__main__':
     #
     # bert.extract_feature([u"你说啥"])
 
-    import csv
-
-
     BERT_HOME = r"C:\Users\Charlie\Developer\models\chinese_L-12_H-768_A-12"
     # BERT_HOME = r"C:\Users\Charlie\Developer\models\multi_cased_L-12_H-768_A-12"
 
     DATA_HOME = r"C:\Users\Charlie\Corpus\kaggle\nlp-getting-started"
 
-    import csv
     import pandas as pd
     train_pd = pd.read_csv(os.path.join(DATA_HOME, "train.csv"))
     xs_train, ys_train = train_pd["text"], train_pd["target"].apply(lambda x: str(x))
