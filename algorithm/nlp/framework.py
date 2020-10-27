@@ -31,3 +31,36 @@ class KerasTrainFramework(object):
 
     def load_model(self, model_file_path):
         self.model.load_weights(model_file_path)
+
+
+class TensorFlowEstimatorTrainFramework(object):
+
+    def __init__(self,
+                 config: SupervisedNNModelTrainConfig
+                 ):
+        self.config = config
+
+    def __input_fn_builder(self, xs_test, ys_test=None):
+        pass
+
+    def __model_fn_builder(self):
+        pass
+
+    def fit(self, xs_test, ys_test):
+        input_fn = self.__input_fn_builder(xs_test, ys_test)
+        self.estimator.train(input_fn=input_fn, hooks=None, steps=None, max_steps=None, saving_listeners=None)
+
+    def evaluate(self, xs_test, ys_test):
+        input_fn = self.__input_fn_builder(xs_test, ys_test)
+        self.estimator.evaluate(input_fn=input_fn, hooks=None, steps=None, max_steps=None, saving_listeners=None)
+
+    def predict(self, xs_test):
+        input_fn = self.__input_fn_builder(xs_test)
+        self.estimator.predict(input_fn=input_fn, hooks=None, steps=None, max_steps=None, saving_listeners=None)
+
+    def load_model(self, model_file_path):
+        self.estimator.export_saved_model(model_file_path,
+                                          # serving_input_receiver_fn,
+                                          assets_extra=None,
+                                          as_text=False,
+                                          checkpoint_path=None)
