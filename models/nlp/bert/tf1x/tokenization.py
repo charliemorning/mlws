@@ -68,9 +68,9 @@ def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
   if is_bad_config:
     raise ValueError(
         "You passed in `--do_lower_case=%s` with `--init_checkpoint=%s`. "
-        "However, `%s` seems to be a %s model, so you "
+        "However, `%s` seems to be a %s models, so you "
         "should pass in `--do_lower_case=%s` so that the fine-tuning matches "
-        "how the model was pre-training. If this error is wrong, please "
+        "how the models was pre-training. If this error is wrong, please "
         "just comment out this check." % (actual_flag, init_checkpoint,
                                           model_name, case_name, opposite_flag))
 

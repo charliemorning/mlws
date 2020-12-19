@@ -1,6 +1,6 @@
 import tensorflow as tf
 
-from model.nlp.framework import KerasTrainFramework
+from models.nlp.framework import KerasTrainFramework
 
 
 class TextCNN(KerasTrainFramework):

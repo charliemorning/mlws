@@ -122,7 +122,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DataTrainingArguments:
     """
-    Arguments pertaining to what data we are going to input our model for training and eval.
+    Arguments pertaining to what data we are going to input our models for training and eval.
     Using `HfArgumentParser` we can turn this class
     into argparse arguments to be able to specify them on
     the command line.
@@ -147,11 +147,11 @@ class DataTrainingArguments:
 @dataclass
 class ModelArguments:
     """
-    Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
+    Arguments pertaining to which models/config/tokenizer we are going to fine-tune from.
     """
 
     model_name_or_path: str = field(
-        metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
+        metadata={"help": "Path to pretrained models or models identifier from huggingface.co/models"}
     )
     config_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained config name or path if not the same as model_name"}
@@ -198,11 +198,11 @@ def main():
     # )
     logger.info("Training/evaluation parameters %s", training_args)
 
-    # Load pretrained model and tokenizer
+    # Load pretrained models and tokenizer
     #
     # Distributed training:
     # The .from_pretrained methods guarantee that only one local process can concurrently
-    # download model & vocab.
+    # download models & vocab.
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.tokenizer_name if model_args.tokenizer_name else model_args.model_name_or_path,

@@ -11,9 +11,9 @@ import tensorflow as tf
 
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
-import model.nlp.bert.tf1x.modeling as modeling
-import model.nlp.bert.tf1x.optimization as optimization
-import model.nlp.bert.tf1x.tokenization as tokenization
+import models.nlp.bert.tf1x.modeling as modeling
+import models.nlp.bert.tf1x.optimization as optimization
+import models.nlp.bert.tf1x.tokenization as tokenization
 
 
 
@@ -196,11 +196,11 @@ class BertFeatureExtractor(Bert):
             # `type=1` were learned during pre-training and are added to the wordpiece
             # embedding vector (and position vector). This is not *strictly* necessary
             # since the [SEP] token unambiguously separates the sequences, but it makes
-            # it easier for the model to learn the concept of sequences.
+            # it easier for the models to learn the concept of sequences.
             #
             # For classification tasks, the first vector (corresponding to [CLS]) is
             # used as as the "sentence vector". Note that this only makes sense because
-            # the entire model is fine-tuned.
+            # the entire models is fine-tuned.
             tokens = []
             input_type_ids = []
             tokens.append("[CLS]")
@@ -596,11 +596,11 @@ class BertTrainer(Bert):
         # `type=1` were learned during pre-training and are added to the wordpiece
         # embedding vector (and position vector). This is not *strictly* necessary
         # since the [SEP] token unambiguously separates the sequences, but it makes
-        # it easier for the model to learn the concept of sequences.
+        # it easier for the models to learn the concept of sequences.
         #
         # For classification tasks, the first vector (corresponding to [CLS]) is
         # used as as the "sentence vector". Note that this only makes sense because
-        # the entire model is fine-tuned.
+        # the entire models is fine-tuned.
         tokens = []
         segment_ids = []
         tokens.append("[CLS]")
@@ -654,7 +654,7 @@ class BertTrainer(Bert):
 
     def create_model(self, is_training, input_ids, input_mask, segment_ids,
                      labels, num_labels):
-        """Creates a classification model."""
+        """Creates a classification models."""
 
         model = modeling.BertModel(
             config=self.bert_config,
@@ -666,7 +666,7 @@ class BertTrainer(Bert):
         # In the demo, we are doing a simple classification task on the entire
         # segment.
         #
-        # If you want to use the token-level output, use model.get_sequence_output()
+        # If you want to use the token-level output, use models.get_sequence_output()
         # instead.
         output_layer = model.get_pooled_output()
 
@@ -848,7 +848,7 @@ class BertTrainer(Bert):
 
         if self.max_seq_length > self.bert_config.max_position_embeddings:
             raise ValueError(
-                "Cannot use sequence length %d because the BERT model "
+                "Cannot use sequence length %d because the BERT models "
                 "was only trained up to sequence length %d" %
                 (self.max_seq_length, self.bert_config.max_position_embeddings))
 
@@ -937,9 +937,9 @@ class BertTrainer(Bert):
 if __name__ == '__main__':
 
     # bert = BertFeatureExtractor(
-    #     r'C:\Users\charlie\developer\model\nlp\lm\chinese_L-12_H-768_A-12\bert_config.json',
-    #     r'C:\Users\charlie\developer\model\nlp\lm\chinese_L-12_H-768_A-12\vocab.txt',
-    #     r'C:\Users\charlie\developer\model\nlp\lm\chinese_L-12_H-768_A-12\bert_model.ckpt',
+    #     r'C:\Users\charlie\developer\models\nlp\lm\chinese_L-12_H-768_A-12\bert_config.json',
+    #     r'C:\Users\charlie\developer\models\nlp\lm\chinese_L-12_H-768_A-12\vocab.txt',
+    #     r'C:\Users\charlie\developer\models\nlp\lm\chinese_L-12_H-768_A-12\bert_model.ckpt',
     #     True, 128)
     #
     # bert.extract_feature([u"你说啥"])
