@@ -1,3 +1,7 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import re
 import os
 import collections
@@ -7,13 +11,15 @@ import tensorflow as tf
 
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
-import algorithm.nlp.bert.tf1x.modeling as modeling
-import algorithm.nlp.bert.tf1x.optimization as optimization
-import algorithm.nlp.bert.tf1x.tokenization as tokenization
+import model.nlp.bert.tf1x.modeling as modeling
+import model.nlp.bert.tf1x.optimization as optimization
+import model.nlp.bert.tf1x.tokenization as tokenization
 
-tf.logging.set_verbosity(tf.logging.INFO)
+
+
+tf.logging.set_verbosity(tf.logging.ERROR)
 import logging
-logging.getLogger('tensorflow').setLevel(logging.INFO)
+logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
 
 def get_metrics_ops(labels, predictions, num_labels):
@@ -96,7 +102,7 @@ class BertFeatureExtractor(Bert):
 
     class FeatureExtractorInputFeatures(object):
         """
-        A single set of features of data.
+        A single set of feature of data.
         """
 
         def __init__(self, unique_id, tokens, input_ids, input_mask, input_type_ids):
@@ -404,7 +410,7 @@ class BertTrainer(Bert):
             self.label = label
 
     class TrainInputFeatures(object):
-        """A single set of features of data."""
+        """A single set of feature of data."""
 
         def __init__(self, input_ids, input_mask, segment_ids, label_id):
             self.input_ids = input_ids
