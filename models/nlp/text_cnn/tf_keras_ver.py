@@ -5,20 +5,20 @@ from models.nlp.framework import KerasTrainFramework
 
 class TextCNN(KerasTrainFramework):
 
-    def __init__(self
-                 , config
-                 , vocab_size: int
-                 , input_size: int
-                 , embed_size: int
-                 , filters: int
-                 , kernel_size: int
-                 , output_dim: int
-                 , embedding_matrix=None
-                 , embedding_trainable=False
-                 , metric_callbacks=None
+    def __init__(self,
+                 train_config,
+                 vocab_size: int,
+                 input_size: int,
+                 embed_size: int,
+                 filters: int,
+                 kernel_size: int,
+                 output_dim: int,
+                 embedding_matrix=None,
+                 embedding_trainable=False,
+                 metric_callbacks=None
                  ):
 
-        KerasTrainFramework.__init__(self, config)
+        super(TextCNN, self).__init__(train_config)
 
         input_ = tf.keras.layers.Input(shape=(input_size,))
 
