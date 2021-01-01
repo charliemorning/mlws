@@ -32,6 +32,11 @@ def f1(y_true, y_pred):
     return 2 * (p * r) / (p + r)
 
 
+def precision_recall_f1_score(y_true, y_pred):
+    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, pos_label=1, average='binary')
+    return precision, recall, f1
+
+
 def transformers_aprf_metrics(pred):
     """
     Calculate huggingface transformers
