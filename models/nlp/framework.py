@@ -1,4 +1,9 @@
 from dataclasses import dataclass
+import string
+import torch
+import nltk
+
+from preprocess.feature.transform import transform_token_seqs_to_word_index_seqs
 
 
 @dataclass
@@ -12,6 +17,7 @@ class SupervisedNNModelTrainConfig:
     logging_dir: str = None
     output_dir: str = None  # directory for storing logs
     warmup_steps: int = None  # number of warmup steps for learning rate scheduler
+    multi_label: bool = False  # if multi-label
 
 
 class TrainFramework(object):
@@ -23,13 +29,53 @@ class TrainFramework(object):
         super(TrainFramework, self).__init__()
         self.train_config = train_config
 
-    def fit(self, train_data, valid_data=None):
+    def fit(self, train_data, eval_data=None):
+
+        if type(train_data) is not tuple:
+            raise TypeError()
+
+        if type(train_data) is tuple\
+                and len(train_data) != 2:
+            raise TypeError()
+
+        if eval_data is not None and len(eval_data) != 2:
+            raise TypeError()
+
+    def evaluate(self, eval_data):
+
+        if eval_data is None:
+            raise TypeError()
+
+        if len(eval_data) != 2:
+            raise TypeError()
+
+    def predict(self, test_data):
         pass
 
-    def evaluate(self, eval_dataset):
-        pass
 
-    def predict(self, test_dataset):
+class PyTorchTrainFramework(TrainFramework):
+
+    def __init__(
+            self,
+            train_config: SupervisedNNModelTrainConfig
+    ):
+        super(PyTorchTrainFramework, self).__init__(train_config=train_config)
+
+        if torch.cuda.is_available():
+            self.device = torch.device("cuda")
+            print(f'There are {torch.cuda.device_count()} GPU(s) available.')
+            print('Device name:', torch.cuda.get_device_name(0))
+        else:
+            print('No GPU available, using the CPU instead.')
+            self.device = torch.device("cpu")
+
+    def fit(self, train_data, eval_data=None):
+        super().fit(train_data=train_data, eval_data=eval_data)
+
+    def evaluate(self, eval_data):
+        super().evaluate(eval_data=eval_data)
+
+    def predict(self, test_data):
         pass
 
 
@@ -90,3 +136,20 @@ class TensorFlowEstimatorTrainFramework(object):
                                           assets_extra=None,
                                           as_text=False,
                                           checkpoint_path=None)
+
+
+class TextDataset(torch.utils.data.Dataset):
+
+    def __init__(
+            self,
+            xs: list,
+            ys: list
+    ):
+        self.data = torch.tensor(xs, dtype=torch.long)
+        self.labels = torch.tensor(ys)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, index):
+        return self.data[index], self.labels[index]
