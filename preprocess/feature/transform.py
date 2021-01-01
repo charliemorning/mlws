@@ -33,7 +33,7 @@ def build_embedding_matrix(embedding_index, word_index, embedding_dim) -> np.arr
     return embedding_matrix
 
 
-def transform_sequences_to_one_hot(sequences, seq_length: int, word_index=None) -> np.array:
+def transform_token_seqs_to_word_index_seqs(sequences, seq_length: int, word_index=None) -> np.array:
 
     if word_index is None:
         word_index, _ = build_word_index_and_counter(sequences)
@@ -51,3 +51,4 @@ def transform_sequences_to_one_hot(sequences, seq_length: int, word_index=None) 
             j -= 1
         i += 1
     return one_hots
+
