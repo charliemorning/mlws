@@ -1,87 +1,69 @@
-import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-from framework.nn.activitions import sigmoid, tanh
 
-class LSTM:
+class LSTM(nn.Module):
 
     def __init__(self,
-                 in_dim,
-                 hidden_dim):
+                 input_size,
+                 hidden_size,
+                 device
+                 ):
 
-        self.in_dim = in_dim
-        self.hidden_dim = hidden_dim
+        super(LSTM, self).__init__()
 
-        # parameter of input in input gate
-        self.W_ii = np.random.randn(in_dim, hidden_dim)
-        self.b_ii = np.random.randn(hidden_dim)
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.device = device
 
-        # parameters of hidden state in input gate
-        self.W_hi = np.random.randn(hidden_dim, hidden_dim)
-        self.b_hi = np.random.randn(hidden_dim)
+        u = torch.tensor(1.0) / torch.sqrt(torch.tensor(hidden_size, dtype=torch.float))
 
-        # the parameter of input in forget gate
-        self.W_if = np.random.randn(in_dim, hidden_dim)
-        self.b_if = np.random.randn(hidden_dim)
+        weights_and_bias = lambda h, w: (nn.Parameter(torch.randn((h, w), dtype=torch.float, device=device) * u, requires_grad=True),
+                                            nn.Parameter(torch.randn(w, dtype=torch.float, device=device) * u, requires_grad=True))
 
-        # the parameter of hidden state in forget gate
-        self.W_hf = np.random.randn(hidden_dim, hidden_dim)
-        self.b_hf = np.random.randn(hidden_dim)
+        self.w_ii, self.b_ii = weights_and_bias(input_size, hidden_size)
+        self.w_hi, self.b_hi = weights_and_bias(hidden_size, hidden_size)
+        self.w_if, self.b_if = weights_and_bias(input_size, hidden_size)
+        self.w_hf, self.b_hf = weights_and_bias(hidden_size, hidden_size)
+        self.w_ig, self.b_ig = weights_and_bias(input_size, hidden_size)
+        self.w_hg, self.b_hg = weights_and_bias(hidden_size, hidden_size)
+        self.w_io, self.b_io = weights_and_bias(input_size, hidden_size)
+        self.w_ho, self.b_ho = weights_and_bias(hidden_size, hidden_size)
 
-        # the parameter of input in cell
-        self.W_ig = np.random.randn(in_dim, hidden_dim)
-        self.b_ig = np.random.randn(hidden_dim)
+    def _forward(self, x, h, c):
 
-        # the parameter of hidden state in cell
-        self.W_hg = np.random.randn(hidden_dim, hidden_dim)
-        self.b_hg = np.random.randn(hidden_dim)
+        # input gate
+        i = F.sigmoid(x @ self.w_ii + self.b_ii + h @ self.w_hi + self.b_hi)
 
-        # the parameter of input in output
-        self.W_io = np.random.randn(in_dim, hidden_dim)
-        self.b_io = np.random.randn(out_dim)
+        # forget gate
+        f = F.sigmoid(x @ self.w_if + self.b_if + h @ self.w_hf + self.b_hf)
 
-        # the parameter of hidden state in output
-        self.W_ho = np.random.randn(hidden_dim, hidden_dim)
-        self.b_ho = np.random.randn(hidden_dim)
+        # cell gate
+        g = torch.tanh(x @ self.w_ig + self.b_ig + h @ self.w_hg + self.b_hg)
 
+        # output gate
+        o = F.sigmoid((x @ self.w_io + self.b_io + h @ self.w_ho + self.b_ho))
 
-    def init_weight(self):
-        self.W_ii *= (1.0 / np.sqrt(hidden_dim))
+        c_t = f * c + i * g
 
+        h_t = o * torch.tanh(c_t)
 
+        return h_t, c_t
 
-    def _forward(self, x, hidden_state_last, cell_state_last):
-        """
+    def forward(self, X):
 
-        :param x: shape=(batch_size, embed_size)
-        :param h: shape=(batch, hidden_dim)
-        :param c: shape=(batch_size, hidden_dim)
-        :return:
-        """
+        h = torch.zeros(self.hidden_size, device=self.device)
+        c = torch.zeros(self.hidden_size, device=self.device)
 
-        # i_t = σ(x * W_ii + + b_ii + h * W_hi + b_hi)
-        input_gate = sigmoid(np.dot(x, self.W_ii) + self.b_ii + np.dot(hidden_state_last, self.W_hi) + self.b_hi)
+        states = torch.zeros((X.shape[0], X.shape[1], self.hidden_size), device=self.device)
 
-        forget_gate = sigmoid(np.dot(x, self.W_if) + self.b_if + np.dot(hidden_state_last, self.W_hf) + self.b_hf)
+        for i in range(X.shape[1]):
 
-        cell_gate = tanh(np.dot(x, self.W_ig) + self.b_ig + np.dot(hidden_state_last, self.W_hg) + self.b_hg)
+            x = X[:, i, :]
 
-        output_gate = sigmoid(np.dot(x, self.W_io) + self.b_io + np.dot(hidden_state_last * self.W_ho) + self.b_ho)
+            h, c = self._forward(x, h, c)
 
-        cell_state = forget_gate * cell_state_last + input_gate * cell_gate
+            states[:, i,: ] = h
 
-        hidden_state = output_gate * tanh(cell_state)
-
-        return hidden_state, cell_state
-
-
-    def forawrd(self, X, masks):
-
-        hidden_state_last = np.random.randn(self.hidden_dim)
-        cell_state_last = np.random.randn(self.hidden_dim)
-
-        hidden_states = []
-        for x in X:
-            hidden_state_last, cell_state_last = self._forward(x, hidden_state_last, cell_state_last)
-            hidden_states.append(hidden_state_last)
-
-        return hidden_states, hidden_state_last, cell_state_last
+        return states, (h, c)
