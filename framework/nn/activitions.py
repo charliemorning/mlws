@@ -13,6 +13,10 @@ class Activition(object):
         pass
 
 
+def tanh(z):
+    return np.tanh(z)
+
+
 def sigmoid(z):
     return (1 + np.exp(-z)) ** -1
 
