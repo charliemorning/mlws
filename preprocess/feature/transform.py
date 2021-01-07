@@ -1,22 +1,40 @@
 from collections import Counter
 
 import numpy as np
-import pandas as pd
 
 
 UNKNOWN = "<unk>"
 
 
-def build_word_index_and_counter(sequences: iter) -> (dict, Counter):
+def build_label_index(labels: iter,
+                      start_from: int = 0
+                      ) -> (dict, Counter):
+    label_counter = Counter()
+    label_index = {}
+    for label in labels:
+        label_counter[label] += 1
+        if label not in label_index:
+            label_index[label] = len(label_index) + start_from
+
+    return label_index, label_counter
+
+
+def build_word_index_and_counter(sequences: iter,
+                                 with_unknown: bool = True,
+                                 unknown_str: str = UNKNOWN,
+                                 start_from: int = 1
+                                 ) -> (dict, Counter):
 
     word_counter = Counter()
     word_index = {}
-    word_index[UNKNOWN] = 0
+    if with_unknown:
+        word_index[unknown_str] = start_from
+
     for seq in sequences:
         for word in seq:
             word_counter[word] += 1
             if word not in word_index:
-                word_index[word] = len(word_index)
+                word_index[word] = len(word_index) + start_from
     return word_index, word_counter
 
 
@@ -33,22 +51,49 @@ def build_embedding_matrix(embedding_index, word_index, embedding_dim) -> np.arr
     return embedding_matrix
 
 
-def transform_token_seqs_to_word_index_seqs(sequences, seq_length: int, word_index=None) -> np.array:
+def transoform_seq_to_one_hot(sequences,
+                              seq_length: int,
+                              word_index=None) -> np.array:
+
+    if word_index is None:
+        word_index, _ = build_word_index_and_counter(sequences, with_unknown=False, start_from=0)
+
+    onehot = np.zeros((len(sequences), seq_length, len(word_index)), dtype="int32")
+
+    for i, seq in enumerate(sequences):
+        for j, word in enumerate(seq):
+            if j > seq_length - 1:
+                break
+            onehot[i][j][word_index[word]] = 1
+
+    return onehot
+
+
+def transform_token_seqs_to_word_index_seqs(sequences,
+                                            seq_length: int,
+                                            from_right_to_left=False,
+                                            word_index=None) -> np.array:
 
     if word_index is None:
         word_index, _ = build_word_index_and_counter(sequences)
 
-    one_hots = np.zeros((len(sequences), seq_length), dtype="int32")
-    i = 0
-    for seq in sequences:
-        j = seq_length - 1
-        for word in reversed(seq):
-            if j < 0:
-                break
-            if word not in word_index:
-                continue
-            one_hots[i][j] = word_index[word] if word in word_index else 1
-            j -= 1
-        i += 1
-    return one_hots
+    index_seq = np.zeros((len(sequences), seq_length), dtype="int32")
+    for i, seq in enumerate(sequences):
+
+        if from_right_to_left:
+            j = seq_length - 1
+            for word in reversed(seq):
+                if j < 0:
+                    break
+
+                index_seq[i][j] = word_index[word] if word in word_index else word_index[UNKNOWN]
+                j -= 1
+        else:
+            for k, word in enumerate(seq):
+                if k > seq_length - 1:
+                    break
+
+                index_seq[i][k] = word_index[word] if word in word_index else word_index[UNKNOWN]
+
+    return index_seq
 
