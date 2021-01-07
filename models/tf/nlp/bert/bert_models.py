@@ -11,9 +11,9 @@ import tensorflow as tf
 
 from tensorflow.python.ops.metrics_impl import _streaming_confusion_matrix
 
-import models.nlp.bert.tf1x.modeling as modeling
-import models.nlp.bert.tf1x.optimization as optimization
-import models.nlp.bert.tf1x.tokenization as tokenization
+import models.tf.nlp.bert.modeling as modeling
+import models.tf.nlp.bert.optimization as optimization
+import models.tf.nlp.bert.tokenization as tokenization
 
 
 
