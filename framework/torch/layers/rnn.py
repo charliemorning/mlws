@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+import torch.nn.functional as functional
 
 
 class LSTM(nn.Module):
@@ -34,16 +34,16 @@ class LSTM(nn.Module):
     def _forward(self, x, h, c):
 
         # input gate
-        i = F.sigmoid(x @ self.w_ii + self.b_ii + h @ self.w_hi + self.b_hi)
+        i = functional.sigmoid(x @ self.w_ii + self.b_ii + h @ self.w_hi + self.b_hi)
 
         # forget gate
-        f = F.sigmoid(x @ self.w_if + self.b_if + h @ self.w_hf + self.b_hf)
+        f = functional.sigmoid(x @ self.w_if + self.b_if + h @ self.w_hf + self.b_hf)
 
         # cell gate
         g = torch.tanh(x @ self.w_ig + self.b_ig + h @ self.w_hg + self.b_hg)
 
         # output gate
-        o = F.sigmoid((x @ self.w_io + self.b_io + h @ self.w_ho + self.b_ho))
+        o = functional.sigmoid((x @ self.w_io + self.b_io + h @ self.w_ho + self.b_ho))
 
         c_t = f * c + i * g
 
@@ -53,8 +53,8 @@ class LSTM(nn.Module):
 
     def forward(self, X):
 
-        h = torch.zeros(self.hidden_size, device=self.device)
-        c = torch.zeros(self.hidden_size, device=self.device)
+        h = torch.randn(self.hidden_size, device=self.device)
+        c = torch.randn(self.hidden_size, device=self.device)
 
         states = torch.zeros((X.shape[0], X.shape[1], self.hidden_size), device=self.device)
 
@@ -64,6 +64,6 @@ class LSTM(nn.Module):
 
             h, c = self._forward(x, h, c)
 
-            states[:, i,: ] = h
+            states[:, i, :] = h
 
         return states, (h, c)
