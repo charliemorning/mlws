@@ -17,9 +17,8 @@ class Embedding(nn.Module):
     def forward(self, x):
         """
         x: shape=(batch_size, seq_length)
-
         """
-        # shpae=(batch_size, seq_length, embedding_num)
+        # shape=(batch_size, seq_length, embedding_num)
         onehot = torch.zeros((x.shape[0], x.shape[1], self.embedding_num), dtype=torch.float, device=x.device)
 
         # shape=(batch_size, seq_length)
