@@ -3,11 +3,17 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-from models.torch.nlp.network.pos_embed import PositionalEncoding
+from framework.torch.layers.embedding import PositionalEncoding
+
 
 @dataclass
 class TransformerConfig:
-    max_feature: int
+    vocab_size: int
+    n_model: int
+    n_layer: int
+    n_head: int
+    dropout: float
+    dim_out: int
 
 
 class Transformers(nn.Module):
@@ -17,16 +23,22 @@ class Transformers(nn.Module):
                  embedding_matrix):
         super(Transformers, self).__init__()
 
-        self.embedding = nn.Embedding(config.max_feature, 300, _weight=torch.tensor(embedding_matrix, dtype=torch.float)
-            )
+        c = config
+        self.c = c
+
+        self.embedding = nn.Embedding(
+            c.vocab_size,
+            c.n_model,
+            _weight=torch.tensor(embedding_matrix, dtype=torch.float)
+        )
+
         self.embedding.weight.requires_grad = False
-        self.pos_embedding = PositionalEncoding(300, 0.1, 300)
+        self.pos_embedding = PositionalEncoding(c.n_model, c.dropout, c.n_model)
 
-        self.transformer_encoder_layer = nn.TransformerEncoderLayer(300, 4)
-        self.transformer_encoder = nn.TransformerEncoder(self.transformer_encoder_layer, 2)
+        self.transformer_encoder_layer = nn.TransformerEncoderLayer(c.n_model, c.n_head)
+        self.transformer_encoder = nn.TransformerEncoder(self.transformer_encoder_layer, c.n_layer)
 
-        self.fc = nn.Linear(300, 1)
-
+        self.fc = nn.Linear(c.n_model, c.dim_out)
 
     def forward(self, x):
 
@@ -38,5 +50,4 @@ class Transformers(nn.Module):
         encode = torch.mean(encode, dim=1)
 
         logits = self.fc(encode)
-
         return logits
