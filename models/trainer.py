@@ -16,6 +16,8 @@ class SupervisedNNModelTrainConfig:
     multi_label: bool = False  # if multi-label
     device: str = "gpu"
     fp16: bool = False
+    patience: int = 7  # patience for early stop
+    delta: float = 0.3  # delta of early stop
 
 
 class Trainer(object):
