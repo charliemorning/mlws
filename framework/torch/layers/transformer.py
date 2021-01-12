@@ -24,7 +24,9 @@ class Embeddings(nn.Module):
 
 
 def attention(query, key, value, mask=None, dropout=None):
-    "Compute 'Scaled Dot Product Attention'"
+    """
+    Compute 'Scaled Dot Product Attention'
+    """
     d_k = query.size(-1)
     scores = torch.matmul(query, key.transpose(-2, -1)) \
              / math.sqrt(d_k)
@@ -37,15 +39,15 @@ def attention(query, key, value, mask=None, dropout=None):
 
 
 class MultiHeadedAttention(nn.Module):
-    def __init__(self, h, d_model, dropout=0.1):
+    def __init__(self, n_head, d_model, dropout=0.1):
         """
         Take in model size and number of heads.
         """
         super(MultiHeadedAttention, self).__init__()
-        assert d_model % h == 0
+        assert d_model % n_head == 0
         # We assume d_v always equals d_k
-        self.d_k = d_model // h
-        self.h = h
+        self.d_k = d_model // n_head
+        self.h = n_head
         self.linears = clones(nn.Linear(d_model, d_model), 4)
         self.attn = None
         self.dropout = nn.Dropout(p=dropout)
@@ -100,7 +102,9 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        "Apply residual connection to any sublayer with the same size."
+        """
+        Apply residual connection to any sublayer with the same size.
+        """
         return x + self.dropout(sublayer(self.norm(x)))
 
 
@@ -160,20 +164,20 @@ class Transformer(nn.Module):
 
     def __init__(self,
                  src_vocab,
-                 N=6,
+                 n_layer=6,
                  d_model=512,
                  d_ff=2048,
-                 h=8,
+                 n_head=8,
                  dropout=0.1):
         super(Transformer, self).__init__()
 
         self.embedding_layer = Embeddings(src_vocab, d_model)
         self.position_embedding_layer = PositionalEncoding(d_model, dropout)
 
-        attn = MultiHeadedAttention(h, d_model)
+        attn = MultiHeadedAttention(n_head, d_model)
         ff = PositionwiseFeedForward(d_model, d_ff, dropout)
-        self.encoder = Encoder(EncoderLayer(d_model, attn, ff, dropout), N)
-        self.linear = nn.Linear(512, 1)
+        self.encoder = Encoder(EncoderLayer(d_model, attn, ff, dropout), n_layer)
+        self.linear = nn.Linear(d_model, 1)
 
         # This was important from their code.
         # Initialize parameters with Glorot / fan_avg.
