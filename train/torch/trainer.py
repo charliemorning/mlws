@@ -3,11 +3,11 @@ import time
 import torch
 import torch.nn as nn
 import numpy as np
-from tqdm import tqdm
 
-from models.torch.nlp.dataset import TextDataset
-from models.trainer import SupervisedNNModelTrainConfig, Trainer
-from util.metric import precision_recall_f1_score
+
+from train.torch.nlp.dataset import TextMCCDataset
+from train.trainer import SupervisedNNModelTrainConfig, Trainer
+from util.metric import report_metrics, precision_recall_f1_score
 
 
 class EarlyStopping:
@@ -99,16 +99,11 @@ class PyTorchTrainer(Trainer):
             print('No GPU available, using the CPU instead.')
             self.device = torch.device("cpu")
 
-    @staticmethod
-    def report_metrics(loss, acc, prec, recall, f1):
-        report = f"[loss={loss:.3f}; acc={acc:.3f}; prec={prec:.3f}; recall={recall:.3f}; f1={f1:.3f};]"
-        print(report)
-
     def fit(self, train_data, eval_data=None):
         super().fit(train_data=train_data, eval_data=eval_data)
 
         xs_train, ys_train = train_data
-        train_dataset = TextDataset(xs_train, ys_train)
+        train_dataset = TextMCCDataset(xs_train, ys_train)
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
 
         train_dataloader = torch.utils.data.DataLoader(
@@ -191,7 +186,7 @@ class PyTorchTrainer(Trainer):
 
             time_elapsed = time.time() - t0_epoch
             print(f"The {epoch_i}th epoch train completed, cost {time_elapsed} seconds.")
-            PyTorchTrainer.report_metrics(avg_train_loss, train_acc, train_prec, train_recall, train_f1)
+            report_metrics(avg_train_loss, train_acc, train_prec, train_recall, train_f1)
 
             if eval_data is not None:
                 # After the completion of each training epoch, measure the model's performance
@@ -200,7 +195,7 @@ class PyTorchTrainer(Trainer):
 
                 # Print performance over the entire training data
                 print("Start evaluation:")
-                PyTorchTrainer.report_metrics(eval_loss, eval_acc, eval_prec, eval_recall, eval_f1)
+                report_metrics(eval_loss, eval_acc, eval_prec, eval_recall, eval_f1)
 
                 # early_stopping needs the validation loss to check if it has decresed,
                 # and if it has, it will make a checkpoint of the current model
@@ -217,13 +212,13 @@ class PyTorchTrainer(Trainer):
                     break
 
         print("Training complete!")
-        return best_loss, best_acc, best_prec, best_recall
+        return best_loss, best_acc, best_prec, best_recall, best_f1
 
     def evaluate(self, eval_data):
         super().evaluate(eval_data=eval_data)
 
         xs_eval, ys_eval = eval_data
-        eval_dataset = TextDataset(xs_eval, ys_eval)
+        eval_dataset = TextMCCDataset(xs_eval, ys_eval)
         eval_sampler = torch.utils.data.RandomSampler(eval_dataset)
         eval_dataloader = torch.utils.data.DataLoader(eval_dataset, sampler=eval_sampler,
                                                       batch_size=self.train_config.eval_batch_size)
