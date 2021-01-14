@@ -2,6 +2,10 @@ import tensorflow.keras.backend as K
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 
 
+def report_metrics(loss, acc, prec, recall, f1, report=print):
+    report(f"[loss={loss:.3f}; acc={acc:.3f}; prec={prec:.3f}; recall={recall:.3f}; f1={f1:.3f};]")
+
+
 def precision(y_true, y_pred):
     """
     Calculates the precision, a metric for multi-label classification of
