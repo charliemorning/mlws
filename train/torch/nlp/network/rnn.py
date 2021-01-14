@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 
 from framework.torch.layers.rnn import LSTM
-from framework.torch.layers.linear import Dense
+from framework.torch.layers.linear import Linear
 
 
 @dataclass
