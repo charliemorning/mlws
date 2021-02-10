@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""The main BERT models and related functions."""
+"""The main BERT train and related functions."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -59,7 +59,7 @@ class BertConfig(object):
             layers in the embeddings, encoder, and pooler.
           attention_probs_dropout_prob: The dropout ratio for the attention
             probabilities.
-          max_position_embeddings: The maximum sequence length that this models might
+          max_position_embeddings: The maximum sequence length that this train might
             ever be used with. Typically set this to something large just in case
             (e.g., 512 or 1024 or 2048).
           type_vocab_size: The vocabulary size of the `token_type_ids` passed into
@@ -105,7 +105,7 @@ class BertConfig(object):
 
 
 class BertModel(object):
-    """BERT models ("Bidirectional Encoder Representations from Transformers").
+    """BERT train ("Bidirectional Encoder Representations from Transformers").
 
     Example usage:
 
@@ -118,11 +118,11 @@ class BertModel(object):
     config = modeling.BertConfig(vocab_size=32000, hidden_size=512,
       num_hidden_layers=8, num_attention_heads=6, intermediate_size=1024)
 
-    models = modeling.BertModel(config=config, is_training=True,
+    train = modeling.BertModel(config=config, is_training=True,
       input_ids=input_ids, input_mask=input_mask, token_type_ids=token_type_ids)
 
     label_embeddings = tf.get_variable(...)
-    pooled_output = models.get_pooled_output()
+    pooled_output = train.get_pooled_output()
     logits = tf.matmul(pooled_output, label_embeddings)
     ...
     ```
@@ -140,7 +140,7 @@ class BertModel(object):
 
         Args:
           config: `BertConfig` instance.
-          is_training: bool. true for training models, false for eval models. Controls
+          is_training: bool. true for training train, false for eval train. Controls
             whether dropout will be applied.
           input_ids: int32 Tensor of shape [batch_size, seq_length].
           input_mask: (optional) int32 Tensor of shape [batch_size, seq_length].
@@ -222,7 +222,7 @@ class BertModel(object):
             # (or segment-pair-level) classification tasks where we need a fixed
             # dimensional representation of the segment.
             with tf.variable_scope("pooler"):
-                # We "pool" the models by simply taking the hidden state corresponding
+                # We "pool" the train by simply taking the hidden state corresponding
                 # to the first token. We assume that this has been pre-trained
                 first_token_tensor = tf.squeeze(self.sequence_output[:, 0:1, :], axis=1)
                 self.pooled_output = tf.layers.dense(
@@ -452,7 +452,7 @@ def embedding_postprocessor(input_tensor,
         for positional embeddings.
       initializer_range: float. Range of the weight initialization.
       max_position_embeddings: int. Maximum sequence length that might ever be
-        used with this models. This can be longer than the sequence length of
+        used with this train. This can be longer than the sequence length of
         input_tensor, but cannot be shorter.
       dropout_prob: float. Dropout probability applied to the final output tensor.
 

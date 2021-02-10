@@ -54,7 +54,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps):
                 (1.0 - is_warmup) * learning_rate + is_warmup * warmup_learning_rate)
 
     # It is recommended that you use this optimizer for fine tuning, since this
-    # is how the models was trained (note that the Adam m/v variables are NOT
+    # is how the train was trained (note that the Adam m/v variables are NOT
     # loaded from init_checkpoint.)
     optimizer = AdamWeightDecayOptimizer(
         learning_rate=learning_rate,
@@ -70,7 +70,7 @@ def create_optimizer(loss, init_lr, num_train_steps, num_warmup_steps):
     tvars = tf.trainable_variables()
     grads = tf.gradients(loss, tvars)
 
-    # This is how the models was pre-trained.
+    # This is how the train was pre-trained.
     (grads, _) = tf.clip_by_global_norm(grads, clip_norm=1.0)
 
     train_op = optimizer.apply_gradients(

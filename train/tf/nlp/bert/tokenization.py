@@ -68,9 +68,9 @@ def validate_case_matches_checkpoint(do_lower_case, init_checkpoint):
   if is_bad_config:
     raise ValueError(
         "You passed in `--do_lower_case=%s` with `--init_checkpoint=%s`. "
-        "However, `%s` seems to be a %s models, so you "
+        "However, `%s` seems to be a %s train, so you "
         "should pass in `--do_lower_case=%s` so that the fine-tuning matches "
-        "how the models was pre-training. If this error is wrong, please "
+        "how the train was pre-training. If this error is wrong, please "
         "just comment out this check." % (actual_flag, init_checkpoint,
                                           model_name, case_name, opposite_flag))
 
@@ -199,8 +199,8 @@ class BasicTokenizer(object):
     text = self._clean_text(text)
 
     # This was added on November 1st, 2018 for the multilingual and Chinese
-    # models. This is also applied to the English models now, but it doesn't
-    # matter since the English models were not trained on any Chinese data
+    # train. This is also applied to the English train now, but it doesn't
+    # matter since the English train were not trained on any Chinese data
     # and generally don't have any Chinese data in them (there are Chinese
     # characters in the vocabulary because Wikipedia does have some Chinese
     # words in the English Wikipedia.).

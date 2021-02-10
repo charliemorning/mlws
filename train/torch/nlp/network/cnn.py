@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 
 from util.nn import calculate_conv_output_dim, GlobalMaxPool1D, GlobalAvgPool1D
+from framework.torch.layers.embedding import Embedding
 
 
 class PoolingType(Enum):
@@ -48,6 +49,7 @@ class TextCNN(nn.Module):
                 padding_idx=0
             )
             torch.nn.init.xavier_uniform_(self.embedding.weight)
+            # self.embedding = Embedding(cnn_model_config.max_features, cnn_model_config.embedding_size)
         else:
             self.embedding = torch.nn.Embedding(
                 num_embeddings=cnn_model_config.max_features,

@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 
-from models.torch.trainer import PyTorchTrainer, SupervisedNNModelTrainConfig
-from models.torch.nlp.network.seq2seq import ModelConfig
+from train.torch.trainer import PyTorchTrainer, SupervisedNNModelTrainConfig
+from train.torch.nlp.network.seq2seq import ModelConfig
 
 
 class LSTMSeqClsTrainer(PyTorchTrainer):

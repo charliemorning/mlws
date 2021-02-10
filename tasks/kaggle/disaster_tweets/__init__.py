@@ -1,7 +1,6 @@
 import os
 import re
 import itertools
-import string
 
 import spacy
 import emoji
@@ -9,6 +8,8 @@ from tqdm import tqdm
 import pandas as pd
 from nltk.tokenize import word_tokenize
 
+from preprocess.text.tokenize import NLTKTokenizer
+from train.dataset import TextDataset
 from preprocess.feature.transform import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
 from util.corpus import train_test_split_from_data_frame
 from util.model import load_embedding_index, rebuild_embedding_index, build_embedding_matrix
@@ -158,11 +159,6 @@ def clean_dataset(text):
     return text
 
 
-def tokenize(text):
-    tokens = [t for t in word_tokenize(text)]
-    return tokens
-
-
 def prepare_data():
     df = pd.read_csv(os.path.join(DATA_HOME, "train.csv"))
     df["target"] = df["target"].progress_apply(lambda x: int(x))
@@ -178,24 +174,11 @@ def prepare_data_for_cnn_and_rnn():
     df["text"] = df["text"].progress_apply(lambda s: s.lower())
     df['text'] = df['text'].progress_apply(remove_contractions)
     # df['text'] = df['text'].progress_apply(clean_dataset)
-    df["sequence"] = df['text'].progress_apply(tokenize)
 
-    # build whole word index
-    word_index, _ = build_word_index_and_counter(df["sequence"])
-
-    train_df, dev_df = train_test_split_from_data_frame(df)
-
-    xs_train = train_df["sequence"].tolist()
-    ys_train = train_df["target"].tolist()
-
-    xs_eval = dev_df["sequence"].tolist()
-    ys_eval = dev_df["target"].tolist()
-
-    xs_word_index_train = transform_token_seqs_to_word_index_seqs(xs_train, word_index=word_index, seq_length=180)
-    xs_word_index_eval = transform_token_seqs_to_word_index_seqs(xs_eval, word_index=word_index, seq_length=180)
+    dataset = TextDataset(df['text'].tolist(), df["target"].tolist(), tokenizer=NLTKTokenizer(), seq_length=128)
 
     embedding_index = load_embedding_index(MODEL_PATH)
-    embedding_index = rebuild_embedding_index(embedding_index, word_index)
-    embedding_matrix = build_embedding_matrix(embedding_index, word_index)
+    embedding_index = rebuild_embedding_index(embedding_index, dataset.get_vocab().word_index())
+    embedding_matrix = build_embedding_matrix(embedding_index, dataset.get_vocab().word_index())
 
-    return xs_word_index_train, ys_train, xs_word_index_eval, ys_eval, embedding_matrix, word_index
+    return dataset, embedding_matrix

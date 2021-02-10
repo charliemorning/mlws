@@ -1,5 +1,6 @@
 import jieba
 from tensorflow.keras.preprocessing.text import Tokenizer as KerasTokenizer
+from nltk.tokenize import word_tokenize
 
 
 def jieba_tokenize(text: str) -> list:
@@ -18,14 +19,26 @@ def keras_tokenizer(num_words=5000,
                      oov_token=None)
 
 
-class Tokenizer:
+class Tokenizer(object):
 
     def __init__(self,
-                 num_words=5000,
+                 vocab_size=5000,
                  filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n',
                  lower=True
                  ):
         pass
 
+    def __len__(self):
+        pass
+
     def word_index(self):
         pass
+
+    def tokenize(self, texts):
+        pass
+
+
+class NLTKTokenizer(Tokenizer):
+
+    def tokenize(self, texts):
+        return [[token for token in word_tokenize(text)] for text in texts]

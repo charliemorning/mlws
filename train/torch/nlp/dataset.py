@@ -1,7 +1,10 @@
 import torch
 
 
-class TextDataset(torch.utils.data.Dataset):
+class TextMCCDataset(torch.utils.data.Dataset):
+    """
+    Text Multi-class classification dataset
+    """
 
     def __init__(
             self,
