@@ -1,4 +1,4 @@
-import torch
+import argparse
 
 from framework.torch.layers.transformer import Transformer as Transformer_
 
@@ -9,7 +9,7 @@ from train.torch.nlp.network.fast_text import FastTextConfig, FastText
 from train.torch.nlp.network.cnn import PoolingType, TextCNNModelConfig, TextCNN
 from train.torch.nlp.network.rnn import TextRNNModelConfig, TextRNN
 from train.torch.nlp.network.transformer import TransformerConfig, Transformers
-from tasks.kaggle.disaster_tweets import prepare_data_for_cnn_and_rnn
+from tasks.kaggle.disaster_tweets.data_helper import prepare_data_for_cnn_and_rnn
 
 
 def fast_text_model(vocab_size, embedding_matrix):
@@ -75,8 +75,8 @@ def transformer_model_(word_index):
     )
 
 
-def main():
-    dataset, embedding_matrix = prepare_data_for_cnn_and_rnn()
+def main(data_home, model_path):
+    dataset, embedding_matrix = prepare_data_for_cnn_and_rnn(data_home, model_path)
 
     config = SupervisedNNModelTrainConfig(
         learning_rate=0.005,
@@ -99,4 +99,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='train cls models on bert.')
+    parser.add_argument('data_home', type=str)
+    parser.add_argument('model_path', type=str)
+    parser.add_argument('--batch-size', type=int, default=4, metavar='N',
+                        help='input batch size for training (default: 4)')
+
+    args = parser.parse_args()
+
+    data_home = args.data_home
+    model_path = args.model_path
+    main(data_home, model_path)

@@ -18,9 +18,6 @@ tqdm.pandas()
 
 # nlp = spacy.load("en_core_web_sm")
 
-DATA_HOME = r"C:\Users\Charlie\Corpus\kaggle\nlp-getting-started"
-MODEL_PATH = r"C:\Users\Charlie\Developer\models\glove.840B.300d\glove.840B.300d.txt"
-
 contractions = {
     "ain't": "am not",
     "aren't": "are not",
@@ -159,8 +156,8 @@ def clean_dataset(text):
     return text
 
 
-def prepare_data():
-    df = pd.read_csv(os.path.join(DATA_HOME, "train.csv"))
+def prepare_data(data_home):
+    df = pd.read_csv(os.path.join(data_home, "train.csv"))
     df["target"] = df["target"].progress_apply(lambda x: int(x))
     df["text"] = df["text"].progress_apply(lambda s: s.lower())
     df['text'] = df['text'].progress_apply(remove_contractions)
@@ -168,8 +165,8 @@ def prepare_data():
     return df
 
 
-def prepare_data_for_cnn_and_rnn():
-    df = pd.read_csv(os.path.join(DATA_HOME, "train.csv"))
+def prepare_data_for_cnn_and_rnn(data_home, model_path):
+    df = pd.read_csv(os.path.join(data_home, "train.csv"))
     df["target"] = df["target"].progress_apply(lambda x: int(x))
     df["text"] = df["text"].progress_apply(lambda s: s.lower())
     df['text'] = df['text'].progress_apply(remove_contractions)
@@ -177,7 +174,7 @@ def prepare_data_for_cnn_and_rnn():
 
     dataset = TextDataset(df['text'].tolist(), df["target"].tolist(), tokenizer=NLTKTokenizer(), seq_length=128)
 
-    embedding_index = load_embedding_index(MODEL_PATH)
+    embedding_index = load_embedding_index(model_path)
     embedding_index = rebuild_embedding_index(embedding_index, dataset.get_vocab().word_index())
     embedding_matrix = build_embedding_matrix(embedding_index, dataset.get_vocab().word_index())
 
