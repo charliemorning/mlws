@@ -42,3 +42,9 @@ class NLTKTokenizer(Tokenizer):
 
     def tokenize(self, texts):
         return [[token for token in word_tokenize(text)] for text in texts]
+
+
+class NGramTokenizer(Tokenizer):
+
+    def tokenize(self, texts):
+        return [[token for token in text] for text in texts]
