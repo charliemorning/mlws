@@ -2,6 +2,7 @@ import numpy as np
 
 from preprocess.text.tokenize import Tokenizer
 from preprocess.feature.transform import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
+from util.label import encode_onehot_labels
 
 
 class Vocabulary(object):
@@ -23,15 +24,23 @@ class Vocabulary(object):
 
 class TextDataset(object):
 
+    def get_vocab(self):
+        return self.vocab
+
     def __init__(
             self,
             texts: list,
             labels: list,
             tokenizer: Tokenizer,
-            seq_length: int
+            seq_length: int,
+            label_encoder=None
     ):
         self.texts = texts
-        self.labels = np.asarray(labels)
+        if label_encoder is None:
+            self.labels = np.asarray(labels)
+        else:
+            self.label_index, self.labels = label_encoder(labels)
+            self.onehot_labels = encode_onehot_labels(labels, self.label_index, self.labels)
         self.tokenizer = tokenizer
 
         self.sequences = tokenizer.tokenize(texts)
@@ -42,9 +51,6 @@ class TextDataset(object):
             word_index=self.vocab.w2i,
             seq_length=seq_length
         )
-
-    def get_vocab(self):
-        return self.vocab
 
     def vocab_size(self):
         return len(self.vocab)
@@ -62,4 +68,7 @@ class TextDataset(object):
         return self.index_sequences[index]
 
     def get_labels_by_index(self, index):
-        return self.labels[index]
+        if self.onehot_labels is not None:
+            return self.onehot_labels[index]
+        else:
+            return self.labels[index]
