@@ -150,13 +150,15 @@ class PyTorchTrainer(Trainer):
                 if self.train_config.binary_out:
                     logits = logits.squeeze(1)
 
+                batch_preds = torch.argmax(logits, dim=1).flatten()
                 # Get the predictions
-                if self.train_config.binary_out:
-                    batch_preds = torch.round(torch.sigmoid(logits))
-                else:
-                    batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
+                # if self.train_config.binary_out:
+                #     batch_preds = torch.round(torch.sigmoid(logits))
+                # else:
+                #     batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
                 preds = torch.cat((preds, batch_preds))
 
+                self.optimizer.zero_grad()
                 loss = self.loss_fn(logits, y_true.float())
 
                 total_train_loss += loss.item()
@@ -180,7 +182,7 @@ class PyTorchTrainer(Trainer):
             avg_train_loss = total_train_loss / len(train_dataloader)
 
             preds = preds.cpu().detach().numpy()
-            trues = trues.cpu().detach().numpy()
+            trues = torch.argmax(trues, dim=2).cpu().detach().numpy().reshape(-1)
             train_acc = (np.asarray(preds) == np.asarray(trues)).mean()
             train_prec, train_recall, train_f1 = precision_recall_f1_score(trues, preds)
 
@@ -224,7 +226,9 @@ class PyTorchTrainer(Trainer):
                                                       batch_size=self.train_config.eval_batch_size)
 
         self.model.eval()
-        loss, y_preds, y_true = 0.0, [], []
+        loss = 0.0
+        y_preds = torch.tensor([], dtype=torch.int, device=self.device)
+        y_true = torch.tensor([], dtype=torch.int, device=self.device)
 
         # For each batch in our validation set...
         for batch in eval_dataloader:
@@ -247,11 +251,14 @@ class PyTorchTrainer(Trainer):
             else:
                 batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
 
-            y_preds.extend([i for i in batch_preds.int().cpu()])
-            y_true.extend([i for i in batch_labels.int().cpu()])
+            y_preds = torch.cat((y_preds, batch_preds))
+            y_true = torch.cat((y_true, batch_labels))
 
         # Compute the average accuracy and loss over the validation set.
         loss = loss / len(eval_dataloader)
+
+        y_true = torch.argmax(y_true, dim=2).cpu().detach().numpy().reshape(-1)
+        y_preds = y_preds.cpu().detach().numpy().reshape(-1)
 
         accuracy = (np.asarray(y_preds) == np.asarray(y_true)).mean() * 100
         precision, recall, f1 = precision_recall_f1_score(y_true, y_preds)
