@@ -40,7 +40,6 @@ class TextDataset(object):
             self.labels = np.asarray(labels)
         else:
             self.label_index, self.labels = label_encoder(labels)
-            self.onehot_labels = encode_onehot_labels(labels, self.label_index, self.labels)
         self.tokenizer = tokenizer
 
         self.sequences = tokenizer.tokenize(texts)
@@ -68,7 +67,4 @@ class TextDataset(object):
         return self.index_sequences[index]
 
     def get_labels_by_index(self, index):
-        if self.onehot_labels is not None:
-            return self.onehot_labels[index]
-        else:
-            return self.labels[index]
+        return self.labels[index]

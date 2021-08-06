@@ -159,7 +159,13 @@ class PyTorchTrainer(Trainer):
                 preds = torch.cat((preds, batch_preds))
 
                 self.optimizer.zero_grad()
-                loss = self.loss_fn(logits, y_true.float())
+                if self.train_config.binary_out:
+                    assert y_true.dtype is torch.float\
+                           or y_true.dtype is torch.float32 or y_true.dtype is torch.float64
+                    loss = self.loss_fn(logits, y_true.float())
+                else:
+                    assert y_true.dtype is torch.long or y_true.dtype is torch.int64
+                    loss = self.loss_fn(logits, y_true)
 
                 total_train_loss += loss.item()
 
@@ -182,12 +188,16 @@ class PyTorchTrainer(Trainer):
             avg_train_loss = total_train_loss / len(train_dataloader)
 
             preds = preds.cpu().detach().numpy()
-            trues = torch.argmax(trues, dim=2).cpu().detach().numpy().reshape(-1)
+            if self.train_config.binary_out:
+                trues = torch.argmax(trues, dim=2).cpu().detach().numpy().reshape(-1)
+            else:
+                trues = trues.cpu().detach().numpy().reshape(-1)
+
             train_acc = (np.asarray(preds) == np.asarray(trues)).mean()
             train_prec, train_recall, train_f1 = precision_recall_f1_score(trues, preds)
 
             time_elapsed = time.time() - t0_epoch
-            print(f"The {epoch_i}th epoch train completed, cost {time_elapsed} seconds.")
+            print(f"The {epoch_i}th epoch train completed, cost {time_elapsed:.3f} seconds.")
             report_metrics(avg_train_loss, train_acc, train_prec, train_recall, train_f1)
 
             if eval_data is not None:
@@ -242,7 +252,7 @@ class PyTorchTrainer(Trainer):
                 logits = logits.squeeze(1)
 
             # Compute loss of current batch
-            batch_loss = self.loss_fn(logits, batch_labels.float())
+            batch_loss = self.loss_fn(logits, batch_labels)
             loss += batch_loss.item()
 
             # Get the predictions
@@ -257,10 +267,13 @@ class PyTorchTrainer(Trainer):
         # Compute the average accuracy and loss over the validation set.
         loss = loss / len(eval_dataloader)
 
-        y_true = torch.argmax(y_true, dim=2).cpu().detach().numpy().reshape(-1)
+        if self.train_config.binary_out:
+            y_true = torch.argmax(y_true, dim=2).cpu().detach().numpy().reshape(-1)
+        else:
+            y_true = y_true.cpu().detach().numpy()
         y_preds = y_preds.cpu().detach().numpy().reshape(-1)
 
-        accuracy = (np.asarray(y_preds) == np.asarray(y_true)).mean() * 100
+        accuracy = (np.asarray(y_preds) == np.asarray(y_true)).mean()
         precision, recall, f1 = precision_recall_f1_score(y_true, y_preds)
 
         return loss, accuracy, precision, recall, f1
