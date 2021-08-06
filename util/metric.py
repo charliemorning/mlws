@@ -36,8 +36,9 @@ def f1(y_true, y_pred):
     return 2 * (p * r) / (p + r)
 
 
-def precision_recall_f1_score(y_true, y_pred):
-    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, pos_label=1, average='binary')
+def precision_recall_f1_score(y_true, y_pred, average=None):
+    assert average in (None, "binary", "macro", "micro", "weighted")
+    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, pos_label=1, average='micro')
     return precision, recall, f1
 
 

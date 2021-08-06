@@ -2,7 +2,7 @@ import numpy as np
 
 from preprocess.text.tokenize import Tokenizer
 from preprocess.feature.transform import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
-from util.label import encode_onehot_labels
+from util.eda import SequenceStatistics
 
 
 class Vocabulary(object):
@@ -36,10 +36,11 @@ class TextDataset(object):
             label_encoder=None
     ):
         self.texts = texts
-        if label_encoder is None:
-            self.labels = np.asarray(labels)
-        else:
-            self.label_index, self.labels = label_encoder(labels)
+        if labels is not None:
+            if label_encoder is None:
+                self.labels = np.asarray(labels)
+            else:
+                self.label_index, self.labels = label_encoder(labels)
         self.tokenizer = tokenizer
 
         self.sequences = tokenizer.tokenize(texts)
@@ -68,3 +69,7 @@ class TextDataset(object):
 
     def get_labels_by_index(self, index):
         return self.labels[index]
+
+    def stats(self) -> str:
+        stats = SequenceStatistics(self.sequences)
+        return stats.report()

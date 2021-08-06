@@ -12,3 +12,12 @@ def load_labelled_data_as_dataset(path):
 
     dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(), seq_length=128, label_encoder=encode_labels)
     return dataset
+
+
+def load_test_data_as_dataset(path):
+    df = pd.read_csv(path, index_col="id")
+    df['sequences'] = df["text"].apply(str.split)
+
+    dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(), seq_length=128,
+                          label_encoder=encode_labels)
+    return dataset
