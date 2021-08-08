@@ -12,13 +12,19 @@ class TextMCCDataset(torch.utils.data.Dataset):
             ys: list
     ):
         self.data = torch.tensor(xs, dtype=torch.long)
-        self.labels = torch.tensor(ys)
+        if ys is not None:
+            self.labels = torch.tensor(ys)
+        else:
+            self.labels = None
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, index):
-        return self.data[index], self.labels[index]
+        if self.labels is None:
+            return self.data[index]
+        else:
+            return self.data[index], self.labels[index]
 
 
 class SequenceDataset(torch.utils.data.Dataset):

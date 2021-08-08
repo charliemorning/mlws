@@ -3,6 +3,9 @@ import pickle
 import os
 import logging
 
+import torch
+
+from train.torch.nlp.dataset import TextMCCDataset
 from preprocess.feature.transform import UNKNOWN
 
 def load_embedding_index(path: str, ext="pickle"):
@@ -59,20 +62,25 @@ def build_embedding_matrix(embedding_index, word_index, oov_strategy=None):
     return embedding_matrix
 
 
-def predict(model, device, test_loader):
+def predict(model, device, xs_test, batch_size):
     model.eval()
-    test_loss = 0
-    correct = 0
+
+    test_dataset = TextMCCDataset(xs_test, None)
+
+    test_dataloader = torch.utils.data.DataLoader(
+        test_dataset,
+        batch_size=batch_size
+    )
+
+    preds = torch.tensor([], dtype=torch.int)
+
     with torch.no_grad():
-        for data, target in test_loader:
-            data, target = data.to(device), target.to(device)
+        for data in test_dataloader:
+            # data = data.to(device)
             output = model(data)
-            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
-            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
-            correct += pred.eq(target.view_as(pred)).sum().item()
 
-    test_loss /= len(test_loader.dataset)
+            batch_preds = torch.argmax(torch.softmax(output, dim=1), dim=1).flatten()
+            preds = torch.cat((preds, batch_preds))
 
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(test_loader.dataset),
-        100. * correct / len(test_loader.dataset)))
+    return preds
+

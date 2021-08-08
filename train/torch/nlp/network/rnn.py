@@ -27,12 +27,18 @@ class TextRNN(nn.Module):
         super(TextRNN, self).__init__()
         self.model_config = model_config
 
-        self.embedding = nn.Embedding(
-            num_embeddings=model_config.max_features,
-            embedding_dim=model_config.embedding_size,
-            _weight=torch.tensor(embedding_matrix, dtype=torch.float)
-        )
-        self.embedding.weight.requires_grad = False
+        if self.model_config.without_pretrained:
+            self.embedding = nn.Embedding(
+                num_embeddings=model_config.max_features,
+                embedding_dim=model_config.embedding_size
+            )
+        else:
+            self.embedding = nn.Embedding(
+                num_embeddings=model_config.max_features,
+                embedding_dim=model_config.embedding_size,
+                _weight=torch.tensor(embedding_matrix, dtype=torch.float)
+            )
+            self.embedding.weight.requires_grad = False
 
         self.rnn = nn.LSTM(
             input_size=model_config.embedding_size,

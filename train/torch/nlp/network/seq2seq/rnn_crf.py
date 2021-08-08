@@ -1,24 +1,32 @@
+from dataclasses import dataclass
+
 import torch
 import torch.nn as nn
 
 from train.torch.trainer import PyTorchTrainer, SupervisedNNModelTrainConfig
-from train.torch.nlp.network.seq2seq import ModelConfig
 
 
-class LSTMSeqClsTrainer(PyTorchTrainer):
+@dataclass()
+class SeqClsModelConfig:
+    max_features: int
+    dim_out: int
+
+
+class LSTMSeqCls(nn.Module):
 
     def __init__(
             self,
-            train_config: SupervisedNNModelTrainConfig,
-            model_config: ModelConfig
+            config: SeqClsModelConfig
     ):
-        super(LSTMSeqClsTrainer, self).__init__(train_config=train_config)
+        super(LSTMSeqCls, self).__init__()
 
-        self.embedding_layer = nn.Embedding(model_config.max_features, 300)
+        c = config
+
+        self.embedding_layer = nn.Embedding(c.max_features, 300)
 
         self.encoder_layer = nn.LSTM(300, 100, batch_first=True)
 
-        self.linear_layer = nn.Linear(100, train_config.dim_out)
+        self.linear_layer = nn.Linear(100, c.dim_out)
 
         # self.decoder_layer = CRF(train_config.dim_out)
 
@@ -37,8 +45,8 @@ class LSTMSeqClsTrainer(PyTorchTrainer):
             num_tokens = int(torch.sum(mask).item())
 
             # pick the values corresponding to labels and multiply by mask
-            range_tensor = torch.range(0, outputs.shape[0], device=self.device).int()
-            outputs = outputs[range_tensor, labels.int()] * mask
+            range_tensor = torch.range(0, outputs.shape[0], device=outputs.device).int()
+            # outputs = outputs[range_tensor, labels.int()] * mask
 
             # cross entropy loss for all non 'PAD' tokens
             return -torch.sum(outputs) / num_tokens

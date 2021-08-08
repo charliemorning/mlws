@@ -38,7 +38,7 @@ def f1(y_true, y_pred):
 
 def precision_recall_f1_score(y_true, y_pred, average=None):
     assert average in (None, "binary", "macro", "micro", "weighted")
-    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, pos_label=1, average='micro')
+    precision, recall, f1, _ = precision_recall_fscore_support(y_true, y_pred, average='weighted')
     return precision, recall, f1
 
 

@@ -1,10 +1,14 @@
 import copy
+from collections import Counter
 
+import numpy as np
 from sklearn.model_selection import KFold, StratifiedKFold
 
 from train.trainer import Trainer
 from train.dataset import TextDataset
 from util.metric import report_metrics
+from util.math import softmax
+
 
 class CVFramework(object):
     """
@@ -13,7 +17,7 @@ class CVFramework(object):
 
     def __init__(self, trainer: Trainer, k=5):
         self.k = k
-        self.trainers = (copy.deepcopy(trainer) for i in range(k))
+        self.trainers = [copy.deepcopy(trainer) for i in range(k)]
 
     def validate(self, dataset: TextDataset):
         kf = StratifiedKFold(n_splits=self.k, shuffle=True, random_state=42)
@@ -21,12 +25,12 @@ class CVFramework(object):
         loss, acc, prec, recall, f1 = .0, .0, .0, .0, .0
         for k, (train_index, eval_index) in enumerate(kf.split(dataset.get_texts(), dataset.get_labels())):
 
-            print(f"the {k}-th fold validation.")
+            print(f"The {k}-th fold validation.")
 
             train_dataset = (dataset.get_sequences_by_index(train_index), dataset.get_labels_by_index(train_index))
             eval_dataset = (dataset.get_sequences_by_index(eval_index), dataset.get_labels_by_index(eval_index))
 
-            k_loss, k_acc, k_prec, k_recall, k_f1 = next(self.trainers).fit(train_dataset, eval_dataset)
+            k_loss, k_acc, k_prec, k_recall, k_f1 = self.trainers[k].fit(train_dataset, eval_dataset)
 
             loss += k_loss
             acc += k_acc
@@ -45,3 +49,26 @@ class CVFramework(object):
 
         return loss, acc, prec, recall, f1
 
+    def predict(self, test_data):
+
+        logits = np.zeros((len(test_data), test_data.get_label_size()))
+
+        stack_preds = np.zeros((5, len(test_data)))
+        preds = np.zeros(len(test_data))
+
+        xs_test = test_data.get_sequences()
+        for i, trainer in enumerate(self.trainers):
+            k_logits, k_preds = trainer.predict(xs_test)
+            stack_preds[i] = k_preds
+            logits += k_logits
+
+        stack_preds = stack_preds.transpose()
+        for i in range(len(stack_preds)):
+            pred = stack_preds[i]
+            label_counter = Counter(pred)
+            preds[i] = label_counter.most_common(1)[0][0]
+
+
+        # logits /= self.k
+        # preds = np.argmax(softmax(logits, axis=1), axis=1).flatten()
+        return preds

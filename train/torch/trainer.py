@@ -135,7 +135,7 @@ class PyTorchTrainer(Trainer):
             # For each batch of training data...
             for step, (data, label) in enumerate(train_dataloader):
 
-                self.optimizer.zero_grad()
+                # self.optimizer.zero_grad()
 
                 data, y_true = data.to(self.device), label.to(self.device)
                 trues = torch.cat((trues, y_true))
@@ -150,25 +150,29 @@ class PyTorchTrainer(Trainer):
                 if self.train_config.binary_out:
                     logits = logits.squeeze(1)
 
-                batch_preds = torch.argmax(logits, dim=1).flatten()
+                # batch_preds = torch.argmax(logits, dim=1).flatten()
                 # Get the predictions
-                # if self.train_config.binary_out:
-                #     batch_preds = torch.round(torch.sigmoid(logits))
-                # else:
-                #     batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
+                if self.train_config.binary_out:
+                    batch_preds = torch.round(torch.sigmoid(logits))
+                else:
+                    batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
                 preds = torch.cat((preds, batch_preds))
 
-                self.optimizer.zero_grad()
+
                 if self.train_config.binary_out:
                     assert y_true.dtype is torch.float\
                            or y_true.dtype is torch.float32 or y_true.dtype is torch.float64
                     loss = self.loss_fn(logits, y_true.float())
                 else:
-                    assert y_true.dtype is torch.long or y_true.dtype is torch.int64
-                    loss = self.loss_fn(logits, y_true)
+                    if y_true.dtype is torch.int32:
+                        loss = self.loss_fn(logits, y_true.long())
+                    else:
+                        assert y_true.dtype is torch.long or y_true.dtype is torch.int64
+                        loss = self.loss_fn(logits, y_true)
 
                 total_train_loss += loss.item()
 
+                self.optimizer.zero_grad()
                 # Perform a backward pass to calculate gradients
                 if self.train_config.fp16:
                     loss = scaler.scale(loss)
@@ -216,6 +220,9 @@ class PyTorchTrainer(Trainer):
                     print("Early stop triggered by eval loss.")
                     best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
                     break
+                else:
+                    # FIXME
+                    best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
             else:
                 early_stopping(avg_train_loss, self.model)
                 if early_stopping.early_stop:
@@ -252,7 +259,11 @@ class PyTorchTrainer(Trainer):
                 logits = logits.squeeze(1)
 
             # Compute loss of current batch
-            batch_loss = self.loss_fn(logits, batch_labels)
+            if batch_labels.dtype is torch.int32:
+                batch_loss = self.loss_fn(logits, batch_labels.long())
+            else:
+                assert batch_labels.dtype is torch.long or batch_labels.dtype is torch.int64
+                batch_loss = self.loss_fn(logits, batch_labels)
             loss += batch_loss.item()
 
             # Get the predictions
@@ -279,6 +290,29 @@ class PyTorchTrainer(Trainer):
         return loss, accuracy, precision, recall, f1
 
     def predict(self, test_data):
-        pass
+
+        self.model.eval()
+
+        test_dataset = TextMCCDataset(test_data, None)
+
+        test_dataloader = torch.utils.data.DataLoader(
+            test_dataset,
+            batch_size=self.train_config.eval_batch_size
+        )
+
+        logits = torch.zeros((len(test_data), 35), device=self.device, dtype=torch.float32)
+        preds = torch.tensor([], device=self.device, dtype=torch.int)
+
+        with torch.no_grad():
+            for i, data in enumerate(test_dataloader):
+                data = data.to(self.device)
+                batch_logits = self.model(data)
+                batch_preds = torch.argmax(torch.softmax(batch_logits, dim=1), dim=1).flatten()
+                logits[i:i + len(data)] = batch_logits
+                preds = torch.cat((preds, batch_preds))
+
+        return logits.detach().cpu().numpy(), preds.detach().cpu().numpy()
+
+
 
 
