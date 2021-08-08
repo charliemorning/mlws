@@ -59,6 +59,7 @@ class Softmax:
 class Relu:
 
     def __init__(self):
+        pass
 
     def foward(self, z):
         pass
