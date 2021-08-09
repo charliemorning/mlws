@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 import gensim
 
@@ -43,6 +45,19 @@ def save_embedding_lookup_table(model_path, target_path):
             line = key + " " + " ".join(map(lambda x: str(x), word_vector[i])) + "\n"
             f.write(line)
         f.close()
+
+
+def prepare_glove_corpus(src_path, dst_path):
+    with open(dst_path) as w_f:
+        with open(src_path) as r_f:
+            for l in r_f:
+                obj = json.loads(l)
+                title = obj["title"]
+                content = obj["content"]
+                text = title + " " + content + "\n"
+                w_f.write(text)
+            r_f.close()
+        w_f.close()
 
 
 if __name__ == '__main__':

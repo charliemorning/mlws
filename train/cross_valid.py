@@ -19,7 +19,7 @@ class CVFramework(object):
         self.k = k
         self.trainers = [copy.deepcopy(trainer) for i in range(k)]
 
-    def validate(self, dataset: TextDataset):
+    def validate(self, dataset: TextDataset) -> (float, float, float, float, float):
         kf = StratifiedKFold(n_splits=self.k, shuffle=True, random_state=42)
 
         loss, acc, prec, recall, f1 = .0, .0, .0, .0, .0
@@ -49,7 +49,7 @@ class CVFramework(object):
 
         return loss, acc, prec, recall, f1
 
-    def predict(self, test_data):
+    def predict(self, test_data: TextDataset) -> np.array[int]:
 
         logits = np.zeros((len(test_data), test_data.get_label_size()))
 
@@ -72,3 +72,6 @@ class CVFramework(object):
         # logits /= self.k
         # preds = np.argmax(softmax(logits, axis=1), axis=1).flatten()
         return preds
+
+    def get_trainers(self) -> list:
+        return self.trainers

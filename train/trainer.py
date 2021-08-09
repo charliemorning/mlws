@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from train.dataset import TextDataset
+
 
 @dataclass
 class SupervisedNNModelTrainConfig:
@@ -29,7 +31,7 @@ class Trainer(object):
         super(Trainer, self).__init__()
         self.train_config = train_config
 
-    def fit(self, train_data, eval_data=None):
+    def fit(self, train_data: TextDataset, eval_data: TextDataset = None) -> None:
 
         if type(train_data) is not tuple:
             raise TypeError()
@@ -41,7 +43,7 @@ class Trainer(object):
         if eval_data is not None and len(eval_data) != 2:
             raise TypeError()
 
-    def evaluate(self, eval_data):
+    def evaluate(self, eval_data: TextDataset) -> None:
 
         if eval_data is None:
             raise TypeError()
@@ -49,5 +51,5 @@ class Trainer(object):
         if len(eval_data) != 2:
             raise TypeError()
 
-    def predict(self, test_data):
+    def predict(self, test_data: TextDataset) -> None:
         pass
