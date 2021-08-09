@@ -54,18 +54,20 @@ class NGramTokenizer(Tokenizer):
         self.n = n
 
     def tokenize(self, texts):
+        if self.n == 1:
+            return [[token for token in text] for text in texts]
+        else:
+            ngrams_list = []
 
-        ngrams_list = []
+            for tokens in texts:
+                expand_tokens = [START_TOKEN] * (self.n - 1) + tokens + [END_TOKEN] * (self.n - 1)
+                ngrams = []
+                for i in range(len(tokens) + 1):
+                    ngram = tuple(expand_tokens[i:i+self.n])
+                    ngrams.append(ngram)
+                ngrams_list.append(ngrams)
 
-        for tokens in texts:
-            expand_tokens = [START_TOKEN] * (self.n - 1) + tokens + [END_TOKEN] * (self.n - 1)
-            ngrams = []
-            for i in range(len(tokens) + 1):
-                ngram = tuple(expand_tokens[i:i+self.n])
-                ngrams.append(ngram)
-            ngrams_list.append(ngrams)
-
-        return ngrams_list
+            return ngrams_list
 
 
 if __name__ == '__main__':
