@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 
 from train.dataset import TextDataset
@@ -28,4 +30,16 @@ def make_submissions(path, data):
     df = pd.DataFrame({"id": id, "label": data})
     df.to_csv(path, index=False)
 
+
+def prepare_glove_corpus(src_path, dst_path):
+    with open(dst_path) as w_f:
+        with open(src_path) as r_f:
+            for l in r_f:
+                obj = json.loads(l)
+                title = obj["title"]
+                content = obj["content"]
+                text = title + " " + content + "\n"
+                w_f.write(text)
+            r_f.close()
+        w_f.close()
 
