@@ -8,7 +8,9 @@ import torch
 from train.torch.nlp.dataset import TextMCCDataset
 from preprocess.feature.transform import UNKNOWN
 
-def load_embedding_index(path: str, ext="pickle"):
+
+def load_embedding_index(path: str,
+                         ext: str = "pickle") -> dict:
 
     pickle_path = path + "." + ext
 

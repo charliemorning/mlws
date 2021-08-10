@@ -9,7 +9,7 @@ class TextMCCDataset(torch.utils.data.Dataset):
     def __init__(
             self,
             xs: list,
-            ys: list
+            ys: list = None
     ):
         self.data = torch.tensor(xs, dtype=torch.long)
         if ys is not None:

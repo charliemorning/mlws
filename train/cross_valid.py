@@ -7,7 +7,9 @@ from sklearn.model_selection import KFold, StratifiedKFold
 from train.trainer import Trainer
 from train.dataset import TextDataset
 from util.metric import report_metrics
-from util.math import softmax
+
+
+SEED = 42
 
 
 class CVFramework(object):
@@ -20,17 +22,21 @@ class CVFramework(object):
         self.trainers = [copy.deepcopy(trainer) for i in range(k)]
 
     def validate(self, dataset: TextDataset) -> (float, float, float, float, float):
-        kf = StratifiedKFold(n_splits=self.k, shuffle=True, random_state=42)
+
+        kf = StratifiedKFold(n_splits=self.k, shuffle=True, random_state=SEED)
 
         loss, acc, prec, recall, f1 = .0, .0, .0, .0, .0
+
         for k, (train_index, eval_index) in enumerate(kf.split(dataset.get_texts(), dataset.get_labels())):
 
-            print(f"The {k}-th fold validation.")
+            print("*" * 40 + f"The {k}-th fold validation." + "*" * 40)
 
             train_dataset = (dataset.get_sequences_by_index(train_index), dataset.get_labels_by_index(train_index))
             eval_dataset = (dataset.get_sequences_by_index(eval_index), dataset.get_labels_by_index(eval_index))
 
             k_loss, k_acc, k_prec, k_recall, k_f1 = self.trainers[k].fit(train_dataset, eval_dataset)
+
+            # TODO: move model parameters out of video memory; or save to disk
 
             loss += k_loss
             acc += k_acc
@@ -44,12 +50,12 @@ class CVFramework(object):
         recall /= self.k
         f1 /= self.k
 
-        print("final result:")
+        print("Final result:")
         report_metrics(loss, acc, prec, recall, f1)
 
         return loss, acc, prec, recall, f1
 
-    def predict(self, test_data: TextDataset) -> np.array[int]:
+    def predict(self, test_data: TextDataset) -> np.array:
 
         logits = np.zeros((len(test_data), test_data.get_label_size()))
 

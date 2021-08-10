@@ -64,6 +64,7 @@ class NGramTokenizer(Tokenizer):
                 ngrams = []
                 for i in range(len(tokens) + 1):
                     ngram = tuple(expand_tokens[i:i+self.n])
+                    ngram = "".join(str(ngram).split())
                     ngrams.append(ngram)
                 ngrams_list.append(ngrams)
 

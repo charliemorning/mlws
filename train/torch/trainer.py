@@ -6,8 +6,9 @@ import numpy as np
 
 
 from train.torch.nlp.dataset import TextMCCDataset
+from train.dataset import TextDataset
 from train.trainer import SupervisedNNModelTrainConfig, Trainer
-from util.metric import report_metrics, precision_recall_f1_score
+from util.metric import get_confusion_matrix, report_metrics, precision_recall_f1_score
 
 
 class EarlyStopping:
@@ -88,8 +89,11 @@ class PyTorchTrainer(Trainer):
         self.optimizer = torch.optim.Adam(
             self.model.parameters(),
             lr=self.train_config.learning_rate,  # Default learning rate
-            eps=1e-8  # Default epsilon value
+            eps=1e-8,  # Default epsilon value
         ) if optimizer is None else optimizer
+
+        # TODO: add scheduler arguments
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=self.optimizer, min_lr=0.0005)
 
         if train_config.device == "gpu" and torch.cuda.is_available():
             self.device = torch.device("cuda")
@@ -99,10 +103,13 @@ class PyTorchTrainer(Trainer):
             print('No GPU available, using the CPU instead.')
             self.device = torch.device("cpu")
 
-    def fit(self, train_data, eval_data=None):
+    def fit(self,
+            train_data: TextDataset,
+            eval_data: TextDataset = None) -> tuple:
         super().fit(train_data=train_data, eval_data=eval_data)
 
         xs_train, ys_train = train_data
+        # TODO: here initiate a multi-class classification dataset default, which should be more options
         train_dataset = TextMCCDataset(xs_train, ys_train)
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
 
@@ -125,6 +132,7 @@ class PyTorchTrainer(Trainer):
 
             # Reset tracking variables at the beginning of each epoch
             total_train_loss = 0
+            # TODO: initiate tensor to target shape
             preds = torch.tensor([], dtype=torch.int, device=self.device)
             trues = torch.tensor([], dtype=torch.int, device=self.device)
 
@@ -134,8 +142,6 @@ class PyTorchTrainer(Trainer):
 
             # For each batch of training data...
             for step, (data, label) in enumerate(train_dataloader):
-
-                # self.optimizer.zero_grad()
 
                 data, y_true = data.to(self.device), label.to(self.device)
                 trues = torch.cat((trues, y_true))
@@ -187,6 +193,7 @@ class PyTorchTrainer(Trainer):
                     scaler.update()
                 else:
                     self.optimizer.step()
+                    self.scheduler.step(total_train_loss)
 
             # Calculate the average loss over the entire training data
             avg_train_loss = total_train_loss / len(train_dataloader)
@@ -221,7 +228,7 @@ class PyTorchTrainer(Trainer):
                     best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
                     break
                 else:
-                    # FIXME
+                    # FIXME: record the best metrics
                     best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
             else:
                 early_stopping(avg_train_loss, self.model)
@@ -233,7 +240,8 @@ class PyTorchTrainer(Trainer):
         print("Training complete!")
         return best_loss, best_acc, best_prec, best_recall, best_f1
 
-    def evaluate(self, eval_data):
+    def evaluate(self,
+                 eval_data: TextDataset) -> tuple:
         super().evaluate(eval_data=eval_data)
 
         xs_eval, ys_eval = eval_data
@@ -245,7 +253,7 @@ class PyTorchTrainer(Trainer):
         self.model.eval()
         loss = 0.0
         y_preds = torch.tensor([], dtype=torch.int, device=self.device)
-        y_true = torch.tensor([], dtype=torch.int, device=self.device)
+        y_trues = torch.tensor([], dtype=torch.int, device=self.device)
 
         # For each batch in our validation set...
         for batch in eval_dataloader:
@@ -273,19 +281,21 @@ class PyTorchTrainer(Trainer):
                 batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
 
             y_preds = torch.cat((y_preds, batch_preds))
-            y_true = torch.cat((y_true, batch_labels))
+            y_trues = torch.cat((y_trues, batch_labels))
 
         # Compute the average accuracy and loss over the validation set.
         loss = loss / len(eval_dataloader)
 
         if self.train_config.binary_out:
-            y_true = torch.argmax(y_true, dim=2).cpu().detach().numpy().reshape(-1)
+            y_trues = torch.argmax(y_trues, dim=2).cpu().detach().numpy().reshape(-1)
         else:
-            y_true = y_true.cpu().detach().numpy()
+            y_trues = y_trues.cpu().detach().numpy()
         y_preds = y_preds.cpu().detach().numpy().reshape(-1)
 
-        accuracy = (np.asarray(y_preds) == np.asarray(y_true)).mean()
-        precision, recall, f1 = precision_recall_f1_score(y_true, y_preds)
+        confusion_matrix = get_confusion_matrix(y_trues, y_preds)
+
+        accuracy = (np.asarray(y_preds) == np.asarray(y_trues)).mean()
+        precision, recall, f1 = precision_recall_f1_score(y_trues, y_preds)
 
         return loss, accuracy, precision, recall, f1
 
@@ -293,14 +303,17 @@ class PyTorchTrainer(Trainer):
 
         self.model.eval()
 
-        test_dataset = TextMCCDataset(test_data, None)
+        test_dataset = TextMCCDataset(test_data)
 
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset,
             batch_size=self.train_config.eval_batch_size
         )
 
+        # FIXME: how to get the output size
         logits = torch.zeros((len(test_data), 35), device=self.device, dtype=torch.float32)
+
+        # TODO: initiate tensor to target shape
         preds = torch.tensor([], device=self.device, dtype=torch.int)
 
         with torch.no_grad():

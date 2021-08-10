@@ -51,13 +51,23 @@ class TextCNN(nn.Module):
             torch.nn.init.xavier_uniform_(self.embedding.weight)
             # self.embedding = Embedding(cnn_model_config.max_features, cnn_model_config.embedding_size)
         else:
+
             self.embedding = torch.nn.Embedding(
                 num_embeddings=cnn_model_config.max_features,
                 embedding_dim=cnn_model_config.embedding_size,
+                max_norm=1,
                 _weight=torch.tensor(embedding_matrix, dtype=torch.float)
             )
             if cnn_model_config.freeze_pretrained:
                 self.embedding.weight.requires_grad = False
+
+            # self.static_embedding = torch.nn.Embedding(
+            #     num_embeddings=cnn_model_config.max_features,
+            #     embedding_dim=cnn_model_config.embedding_size,
+            #     max_norm=1,
+            #     _weight=torch.tensor(embedding_matrix, dtype=torch.float)
+            # )
+            # self.static_embedding.weight.requires_grad = False
 
         self.conv_list = torch.nn.ModuleList([torch.nn.Conv1d(
             in_channels=cnn_model_config.embedding_size,
@@ -126,10 +136,14 @@ class TextCNN(nn.Module):
         self.fc = torch.nn.Linear(fc_in, cnn_model_config.dim_out)
         torch.nn.init.uniform_(self.fc.weight)
 
+
     def forward(self, x):
 
         # (batch_size, max_seq_length) -> (batch_size, max_seq_length, embedding_size)
+        # random_embedding = self.random_embedding(x)
         embedding = self.embedding(x)
+        # static_embedding = self.static_embedding(x)
+        # embedding = torch.cat([dynamic_embedding, static_embedding], dim=2)
 
         # (batch_size, max_seq_length, embedding_size) -> (batch_size, embedding_size, max_seq_length)
         embedding = embedding.permute(0, 2, 1)

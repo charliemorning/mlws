@@ -1,5 +1,10 @@
 import tensorflow.keras.backend as K
 from sklearn.metrics import accuracy_score, precision_recall_fscore_support
+from sklearn.metrics import confusion_matrix
+
+
+def get_confusion_matrix(y_true, y_pred):
+    confusion_matrix(y_true, y_pred)
 
 
 def report_metrics(loss, acc, prec, recall, f1, report=print):

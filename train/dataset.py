@@ -21,6 +21,21 @@ class Vocabulary(object):
     def index_word(self):
         return self.i2w
 
+    def check_coverage(self, vocab):
+
+        oov = Counter()
+        iv = Counter()
+
+        for w in vocab.w2i:
+            if w in self.w2i:
+                iv[w] += vocab.wc[w]
+            else:
+                oov[w] += vocab.wc[w]
+
+        ivc, oovc = sum(iv.values()), sum(oov.values())
+
+        return iv, ivc, oov, oovc
+
     def __len__(self):
         return len(self.w2i)
 
