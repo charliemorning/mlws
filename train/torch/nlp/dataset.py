@@ -1,6 +1,18 @@
 import torch
 
 
+def sort_sequences(inputs, lengths):
+    """sort_sequences
+    Sort sequences according to lengths descendingly.
+
+    :param inputs (Tensor): input sequences, size [B, T, D]
+    :param lengths (Tensor): length of each sequence, size [B]
+    """
+    lengths_sorted, sorted_idx = lengths.sort(descending=True)
+    _, unsorted_idx = sorted_idx.sort()
+    return inputs[sorted_idx], lengths_sorted, unsorted_idx
+
+
 class TextMCCDataset(torch.utils.data.Dataset):
     """
     Text Multi-class classification dataset
@@ -11,7 +23,10 @@ class TextMCCDataset(torch.utils.data.Dataset):
             xs: list,
             ys: list = None
     ):
-        self.data = torch.tensor(xs, dtype=torch.long)
+        # FIXME
+        self.data = torch.tensor(xs[0], dtype=torch.long)
+        self.lens = torch.tensor(xs[1], dtype=torch.int32)
+
         if ys is not None:
             self.labels = torch.tensor(ys)
         else:
@@ -22,9 +37,9 @@ class TextMCCDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, index):
         if self.labels is None:
-            return self.data[index]
+            return self.data[index], self.lens[index]
         else:
-            return self.data[index], self.labels[index]
+            return self.data[index], self.lens[index], self.labels[index]
 
 
 class SequenceDataset(torch.utils.data.Dataset):

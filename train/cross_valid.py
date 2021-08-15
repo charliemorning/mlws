@@ -31,8 +31,8 @@ class CVFramework(object):
 
             print("*" * 40 + f"The {k}-th fold validation." + "*" * 40)
 
-            train_dataset = (dataset.get_sequences_by_index(train_index), dataset.get_labels_by_index(train_index))
-            eval_dataset = (dataset.get_sequences_by_index(eval_index), dataset.get_labels_by_index(eval_index))
+            train_dataset = ((dataset.get_sequences_by_index(train_index), dataset.get_sequence_lengths()[train_index]), dataset.get_labels_by_index(train_index))
+            eval_dataset = ((dataset.get_sequences_by_index(eval_index), dataset.get_sequence_lengths()[eval_index]), dataset.get_labels_by_index(eval_index))
 
             k_loss, k_acc, k_prec, k_recall, k_f1 = self.trainers[k].fit(train_dataset, eval_dataset)
 
@@ -62,7 +62,7 @@ class CVFramework(object):
         stack_preds = np.zeros((5, len(test_data)))
         preds = np.zeros(len(test_data))
 
-        xs_test = test_data.get_sequences()
+        xs_test = (test_data.get_sequences(), test_data.get_sequence_lengths())
         for i, trainer in enumerate(self.trainers):
             k_logits, k_preds = trainer.predict(xs_test)
             stack_preds[i] = k_preds

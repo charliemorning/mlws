@@ -102,6 +102,9 @@ class TextDataset(object):
             seq_length=seq_length
         )
 
+    def get_sequence_lengths(self):
+        return np.asarray([len(seq) for seq in self.sequences])
+
     def vocab_size(self):
         return len(self.vocab)
 
