@@ -12,7 +12,7 @@ from train.trainer import SupervisedNNModelTrainConfig
 from train.torch.trainer import PyTorchTrainer
 from train.torch.nlp.network.fast_text import FastTextConfig, FastText
 from train.torch.nlp.network.cnn import PoolingType, TextCNNModelConfig, TextCNN
-from train.torch.nlp.network.rnn import TextRNNModelConfig, TextRNN
+from train.torch.nlp.network.rnn import TextRNNModelConfig, TextRNN, TextRNN2, TextRNNAtt
 from train.torch.nlp.network.transformer import TransformerConfig, Transformers
 from tasks.ccf.datagrand2021.data_helper import *
 from util.model import predict
@@ -21,14 +21,14 @@ from util.model import rebuild_embedding_index, build_embedding_matrix
 
 TRAIN_DATA_FILENAME = "datagrand_2021_train.csv"
 TEST_DATA_FILENAME = "datagrand_2021_test.csv"
-MODEL_FILENAME = "word2vec.skipgram.uigram.300d.txt"
+MODEL_FILENAME = "word2vec.skipgram.unigram.300d.txt"
 
 
 def fast_text_model(vocab_size, dim_out):
 
     config = FastTextConfig(
         max_feature=vocab_size + 1,
-        embedding_size=300,
+        embedding_size=100,
         dim_out=dim_out
     )
 
@@ -65,20 +65,20 @@ def rnn_model(vocab_size, embedding_matrix, dim_out):
 
     model_config = TextRNNModelConfig(
         max_features=vocab_size + 1,
-        max_seq_length=128,
+        max_seq_length=350,
         embedding_size=300,
         dim_out=dim_out,
-        without_pretrained=True
+        without_pretrained=False
     )
 
-    model = TextRNN(model_config=model_config, embedding_matrix=embedding_matrix)
+    model = TextRNNAtt(model_config=model_config, embedding_matrix=embedding_matrix)
 
     return model
 
 
 def main(data_home):
 
-    # word_embeddings = load_word_embeddings(os.path.join(data_home, MODEL_FILENAME))
+    word_embeddings = load_word_embeddings(os.path.join(data_home, MODEL_FILENAME))
 
     train_dataset = load_labelled_data_as_dataset(os.path.join(data_home, TRAIN_DATA_FILENAME))
     print(train_dataset.stats())
@@ -89,31 +89,35 @@ def main(data_home):
     # print("iv count: %d; oov count: %d" % (ivc, oovc))
     # print("oov rate: %f" % (oovc / float(ivc + oovc)))
 
-    # embedding_index = rebuild_embedding_index(word_embeddings, train_dataset.get_vocab().word_index())
-    # embedding_matrix = build_embedding_matrix(word_embeddings, train_dataset.get_vocab().word_index())
+    embedding_index = rebuild_embedding_index(word_embeddings, train_dataset.get_vocab().word_index())
+    embedding_matrix = build_embedding_matrix(word_embeddings, train_dataset.get_vocab().word_index())
 
     # emb_mean, emb_std = embedding_matrix.mean(), embedding_matrix.std()
     # embedding_matrix = np.random.normal(emb_mean, emb_std, (nb_words, embed_size))
-    embedding_matrix = None
+    # embedding_matrix = None
 
     config = SupervisedNNModelTrainConfig(
         learning_rate=0.01,
-        epoch=100,
+        epoch=10,
         train_batch_size=128,
         eval_batch_size=128,
         binary_out=False,
-        patience=3
+        patience=5
     )
 
-    model = cnn_model(train_dataset.vocab_size(), embedding_matrix, len(np.unique(train_dataset.get_labels())))
+    model = rnn_model(train_dataset.vocab_size(), embedding_matrix, len(np.unique(train_dataset.get_labels())))
+    print(model)
 
     trainer = PyTorchTrainer(
         model=model,
         train_config=config
     )
 
-    cv = CVFramework(trainer)
-    cv.validate(train_dataset)
+    # cv = CVFramework(trainer)
+    # cv.validate(train_dataset)
+
+    xs_train = ((train_dataset.get_sequences(), train_dataset.get_sequence_lengths()), train_dataset.get_labels())
+    trainer.fit(xs_train)
 
     test_dataset = load_test_data_as_dataset(os.path.join(data_home, TEST_DATA_FILENAME), train_dataset.get_vocab(), train_dataset.get_label_encoder())
 
@@ -122,7 +126,8 @@ def main(data_home):
     print(test_dataset.get_oov())
     print(test_dataset.stats())
 
-    preds = cv.predict(test_dataset)
+    xs_test = (test_dataset.get_sequences(), test_dataset.get_sequence_lengths())
+    _, preds = trainer.predict(xs_test)
     preds = train_dataset.get_label_encoder().decode(preds)
     make_submissions(os.path.join(data_home, "submission.csv"), preds)
 

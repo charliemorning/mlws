@@ -9,7 +9,7 @@ from util.label import encode_labels
 from util.model import load_embedding_index
 
 
-NGRAM = 2
+NGRAM = 1
 
 
 def load_word_embeddings(path: str) -> dict:
@@ -20,10 +20,10 @@ def load_labelled_data_as_dataset(path: str) -> TextDataset:
 
     df = pd.read_csv(path, index_col="id")
     df['sequences'] = df["text"].apply(str.split)
-    df['label'] = df['label'].apply(lambda x: x.split("-")[0])
-    df['label'] = df['label'].apply(lambda x: '5' if x in ['5', '6', '7', '8', '9'] else x)
+    # df['label'] = df['label'].apply(lambda x: x.split("-")[0])
+    # df['label'] = df['label'].apply(lambda x: '5' if x in ['5', '6', '7', '8', '9'] else x)
 
-    dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(NGRAM), seq_length=150, vocab=None, label_encoder=None)
+    dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(NGRAM), seq_length=350, vocab=None, label_encoder=None)
     return dataset
 
 
@@ -31,7 +31,7 @@ def load_test_data_as_dataset(path: str, vocab, label_encoder):
     df = pd.read_csv(path, index_col="id")
     df['sequences'] = df["text"].apply(str.split)
 
-    dataset = TextDataset(df['sequences'].tolist(), None, tokenizer=NGramTokenizer(NGRAM), seq_length=128, vocab=vocab,
+    dataset = TextDataset(df['sequences'].tolist(), None, tokenizer=NGramTokenizer(NGRAM), seq_length=350, vocab=vocab,
                           label_encoder=label_encoder)
     return dataset
 
