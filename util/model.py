@@ -5,8 +5,8 @@ import logging
 
 import torch
 
-from train.torch.nlp.dataset import TextMCCDataset
-from preprocess.feature.transform import UNKNOWN
+from nlp.diagrams.neruel_network.dataset import TextMCCDataset
+
 
 def load_embedding_index(path: str, ext="pickle"):
 

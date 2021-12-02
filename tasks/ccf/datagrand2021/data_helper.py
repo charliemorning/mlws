@@ -3,9 +3,8 @@ import json
 import pandas as pd
 import gensim
 
-from train.dataset import TextDataset
-from preprocess.text.tokenize import NGramTokenizer
-from util.label import encode_labels
+from nlp.dataset import TextDataset
+from nlp.preprocess import NGramTokenizer
 from util.model import load_embedding_index
 
 

@@ -1,5 +1,5 @@
 import os
-from preprocess.feature.transform import build_label_index, build_word_index_and_counter, transform_token_seqs_to_word_index_seqs, transoform_seq_to_one_hot
+from nlp.preprocess.feature import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs, transoform_seq_to_one_hot
 
 DATA_HOME = r"L:\developer\msra"
 

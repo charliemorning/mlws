@@ -1,14 +1,14 @@
 import argparse
 
-from framework.torch.layers.transformer import Transformer as Transformer_
+from playground.nlp.framework import Transformer as Transformer_
 
 from train.cross_valid import CVFramework
-from train.trainer import SupervisedNNModelTrainConfig
-from train.torch.trainer import PyTorchTrainer
-from train.torch.nlp.network.fast_text import FastTextConfig, FastText
-from train.torch.nlp.network.cnn import PoolingType, TextCNNModelConfig, TextCNN
-from train.torch.nlp.network.rnn import TextRNNModelConfig, TextRNN
-from train.torch.nlp.network.transformer import TransformerConfig, Transformers
+from nlp.trainer import SupervisedNNModelTrainConfig
+from nlp.diagrams.neruel_network.trainer import PyTorchTrainer
+from nlp.diagrams.neruel_network.classical.fast_text import FastTextConfig, FastText
+from nlp.diagrams.neruel_network.classical.cnn import PoolingType, TextCNNModelConfig, TextCNN
+from nlp.diagrams.neruel_network.classical.rnn import TextRNNModelConfig, TextRNN
+from nlp.diagrams.neruel_network.classical.transformer import TransformerConfig, Transformers
 from tasks.kaggle.disaster_tweets.data_helper import prepare_data_for_cnn_and_rnn
 
 

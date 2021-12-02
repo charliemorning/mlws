@@ -2,19 +2,13 @@ import argparse
 import os
 import numpy as np
 
-import torch
-
-from framework.torch.layers.transformer import Transformer as Transformer_
-
 from train.cross_valid import CVFramework
-from train.trainer import SupervisedNNModelTrainConfig
-from train.torch.trainer import PyTorchTrainer
-from train.torch.nlp.network.fast_text import FastTextConfig, FastText
-from train.torch.nlp.network.cnn import PoolingType, TextCNNModelConfig, TextCNN
-from train.torch.nlp.network.rnn import TextRNNModelConfig, TextRNN
-from train.torch.nlp.network.transformer import TransformerConfig, Transformers
+from nlp.trainer import SupervisedNNModelTrainConfig
+from nlp.diagrams.neruel_network.trainer import PyTorchTrainer
+from nlp.diagrams.neruel_network.classical.fast_text import FastTextConfig, FastText
+from nlp.diagrams.neruel_network.classical.cnn import PoolingType, TextCNNModelConfig, TextCNN
+from nlp.diagrams.neruel_network.classical.rnn import TextRNNModelConfig, TextRNN
 from tasks.ccf.datagrand2021.data_helper import *
-from util.model import predict
 from util.model import rebuild_embedding_index, build_embedding_matrix
 
 
@@ -46,7 +40,7 @@ def cnn_model(vocab_size, embedding_matrix, dim_out):
         dilation=[1, 1, 1],
         stride=[1, 1, 1],
         dim_out=dim_out,
-        pooling_type=PoolingType.MAX_POOLING,
+        pooling_type=PoolingType.AVG_POOLING,
         global_pooling=True,
         without_pretrained=False
 

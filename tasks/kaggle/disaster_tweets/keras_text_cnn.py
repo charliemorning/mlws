@@ -5,8 +5,8 @@ import argparse
 import pandas as pd
 
 
-from preprocess.text.tokenize import keras_tokenizer
-from preprocess.feature.transform import transform_token_seqs_to_word_index_seqs
+from nlp.preprocess import keras_tokenizer
+from nlp.preprocess.feature import transform_token_seqs_to_word_index_seqs
 
 from util.eda import *
 from util.corpus import train_test_split_from_data_frame
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description='train cls train on text cnn.')
+    parser = argparse.ArgumentParser(description='train cls train on text convolutional.')
 
     parser.add_argument('data_home', type=str)
 

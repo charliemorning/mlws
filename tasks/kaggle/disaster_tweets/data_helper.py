@@ -2,16 +2,12 @@ import os
 import re
 import itertools
 
-import spacy
 import emoji
 from tqdm import tqdm
 import pandas as pd
-from nltk.tokenize import word_tokenize
 
-from preprocess.text.tokenize import NLTKTokenizer
-from train.dataset import TextDataset
-from preprocess.feature.transform import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
-from util.corpus import train_test_split_from_data_frame
+from nlp.preprocess import NLTKTokenizer
+from nlp.dataset import TextDataset
 from util.model import load_embedding_index, rebuild_embedding_index, build_embedding_matrix
 
 tqdm.pandas()

@@ -1,6 +1,6 @@
 from tasks.msra_ner import prepare_for_data
-from train.torch.nlp.network.seq2seq.rnn_crf import LSTMSeqCls, SeqClsModelConfig
-from train.torch.trainer import SupervisedNNModelTrainConfig, PyTorchTrainer
+from nlp.diagrams.neruel_network.classical.rnn_crf import LSTMSeqCls, SeqClsModelConfig
+from nlp.diagrams.neruel_network.trainer import SupervisedNNModelTrainConfig, PyTorchTrainer
 
 
 def main():

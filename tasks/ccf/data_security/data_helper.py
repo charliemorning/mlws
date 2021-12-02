@@ -3,9 +3,6 @@ import logging
 import pandas as pd
 from tqdm import tqdm
 
-
-from preprocess.feature.transform import *
-from preprocess.text.tokenize import *
 from util.eda import *
 
 

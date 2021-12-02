@@ -2,12 +2,11 @@ import copy
 from collections import Counter
 
 import numpy as np
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import StratifiedKFold
 
-from train.trainer import Trainer
-from train.dataset import TextDataset
+from nlp.trainer import Trainer
+from nlp.dataset import TextDataset
 from util.metric import report_metrics
-from util.math import softmax
 
 
 class CVFramework(object):
@@ -49,7 +48,7 @@ class CVFramework(object):
 
         return loss, acc, prec, recall, f1
 
-    def predict(self, test_data: TextDataset) -> np.array[int]:
+    def predict(self, test_data: TextDataset) -> np.array:
 
         logits = np.zeros((len(test_data), test_data.get_label_size()))
 
