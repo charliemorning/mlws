@@ -8,7 +8,9 @@ import torch
 from nlp.diagrams.neruel_network.dataset import TextMCCDataset
 
 
-def load_embedding_index(path: str, ext="pickle"):
+
+def load_embedding_index(path: str,
+                         ext: str = "pickle") -> dict:
 
     pickle_path = path + "." + ext
 

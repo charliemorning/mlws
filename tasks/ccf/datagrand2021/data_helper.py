@@ -8,24 +8,29 @@ from nlp.preprocess import NGramTokenizer
 from util.model import load_embedding_index
 
 
-def load_word_embeddings(path):
+NGRAM = 1
+
+
+def load_word_embeddings(path: str) -> dict:
     return load_embedding_index(path)
 
 
-def load_labelled_data_as_dataset(path):
+def load_labelled_data_as_dataset(path: str) -> TextDataset:
 
     df = pd.read_csv(path, index_col="id")
     df['sequences'] = df["text"].apply(str.split)
+    # df['label'] = df['label'].apply(lambda x: x.split("-")[0])
+    # df['label'] = df['label'].apply(lambda x: '5' if x in ['5', '6', '7', '8', '9'] else x)
 
-    dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(1), seq_length=128, vocab=None, label_encoder=None)
+    dataset = TextDataset(df['sequences'].tolist(), df["label"].tolist(), tokenizer=NGramTokenizer(NGRAM), seq_length=350, vocab=None, label_encoder=None)
     return dataset
 
 
-def load_test_data_as_dataset(path, vocab, label_encoder):
+def load_test_data_as_dataset(path: str, vocab, label_encoder):
     df = pd.read_csv(path, index_col="id")
     df['sequences'] = df["text"].apply(str.split)
 
-    dataset = TextDataset(df['sequences'].tolist(), None, tokenizer=NGramTokenizer(2), seq_length=128, vocab=vocab,
+    dataset = TextDataset(df['sequences'].tolist(), None, tokenizer=NGramTokenizer(NGRAM), seq_length=350, vocab=vocab,
                           label_encoder=label_encoder)
     return dataset
 
@@ -41,6 +46,7 @@ def save_embedding_lookup_table(model_path, target_path):
     word_vector = model.wv
     with open(target_path, "w", encoding="utf-8") as f:
         for i, key in enumerate(word_vector.index_to_key):
+            key = "".join(key.split())
             line = key + " " + " ".join(map(lambda x: str(x), word_vector[i])) + "\n"
             f.write(line)
         f.close()
@@ -60,7 +66,8 @@ def prepare_glove_corpus(src_path, dst_path):
 
 
 if __name__ == '__main__':
-    save_embedding_lookup_table("L:/developer/word2vec.skipgram.unigram.300d.model", "L:/developer/word2vec.skipgram.unigram.300d.txt")
+    # save_embedding_lookup_table("L:/developer/word2vec.skipgram.unigram.300d.model", "L:/developer/word2vec.skipgram.unigram.300d.txt")
+    save_embedding_lookup_table("L:/developer/word2vec.skipgram.bigram.300d.model", "L:/developer/word2vec.skipgram.bigram.300d.txt")
 
 
 

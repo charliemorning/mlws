@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 
-from nlp.dataset import TextDataset
+import numpy as np
+
+from train.dataset import TextDataset
 
 
 @dataclass
@@ -31,7 +33,11 @@ class Trainer(object):
         super(Trainer, self).__init__()
         self.train_config = train_config
 
-    def fit(self, train_data: TextDataset, eval_data: TextDataset = None) -> None:
+    def fit(self,
+            train_data: Tuple[Any, list],
+            eval_data: Tuple[Any, list] = None,
+            *args,
+            **kwargs) -> Tuple[float, float, float, float, float]:
 
         if type(train_data) is not tuple:
             raise TypeError()
@@ -43,7 +49,12 @@ class Trainer(object):
         if eval_data is not None and len(eval_data) != 2:
             raise TypeError()
 
-    def evaluate(self, eval_data: TextDataset) -> None:
+        return 0.0, 0.0, 0.0, 0.0, 0.0
+
+    def evaluate(self,
+                 eval_data: Tuple[Any, list],
+                 *args,
+                 **kwargs) -> Tuple[float, float, float, float, float]:
 
         if eval_data is None:
             raise TypeError()
@@ -51,5 +62,10 @@ class Trainer(object):
         if len(eval_data) != 2:
             raise TypeError()
 
-    def predict(self, test_data: TextDataset) -> None:
+        return 0.0, 0.0, 0.0, 0.0, 0.0
+
+    def predict(self,
+                test_data: Tuple[Any, list],
+                *args,
+                **kwargs) -> Tuple[np.array, np.array]:
         pass

@@ -5,9 +5,22 @@ import torch.nn as nn
 import numpy as np
 
 
-from nlp.diagrams.neruel_network.dataset import TextMCCDataset
-from nlp.trainer import SupervisedNNModelTrainConfig, Trainer
-from util.metric import report_metrics, precision_recall_f1_score
+from train.torch.nlp.dataset import TextMCCDataset
+from train.dataset import TextDataset
+from train.trainer import SupervisedNNModelTrainConfig, Trainer
+from util.metric import get_confusion_matrix, report_metrics, precision_recall_f1_score
+
+
+def sort_sequences(inputs: torch.Tensor, lengths: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    """sort_sequences
+    Sort sequences according to lengths descendingly.
+
+    :param inputs (Tensor): input sequences, size [B, T, D]
+    :param lengths (Tensor): length of each sequence, size [B]
+    """
+    lengths_sorted, sorted_idx = lengths.sort(descending=True)
+    _, unsorted_idx = sorted_idx.sort()
+    return inputs[sorted_idx], lengths_sorted, sorted_idx, unsorted_idx
 
 
 class EarlyStopping:
@@ -91,6 +104,9 @@ class PyTorchTrainer(Trainer):
             eps=1e-8  # Default epsilon value
         ) if optimizer is None else optimizer
 
+        # TODO: add scheduler arguments
+        self.scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer=self.optimizer, min_lr=0.001)
+
         if train_config.device == "gpu" and torch.cuda.is_available():
             self.device = torch.device("cuda")
             print(f'There are {torch.cuda.device_count()} GPU(s) available.')
@@ -99,10 +115,62 @@ class PyTorchTrainer(Trainer):
             print('No GPU available, using the CPU instead.')
             self.device = torch.device("cpu")
 
-    def fit(self, train_data, eval_data=None):
-        super().fit(train_data=train_data, eval_data=eval_data)
+    def __forward(self, data, lens, mode="train"):
+        if self.train_config.fp16:
+            with torch.cuda.amp.autocast():
+                logits = self.model(data)
+        else:
+            if mode is "train":
+                logits = self.model(data, lens)
+            elif mode is "eval" or mode is "predict":
+                with torch.no_grad():
+                    logits = self.model(data)
+            else:
+                raise TypeError()
 
+        if self.train_config.binary_out:
+            logits = logits.squeeze(1)
+
+        return logits
+
+    def __get_predicts(self, logits):
+        if self.train_config.binary_out:
+            return torch.round(torch.sigmoid(logits))
+        else:
+            return torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
+
+    def __get_loss(self, logits, y_trues):
+        if self.train_config.binary_out:
+            assert y_trues.dtype is torch.float \
+                   or y_trues.dtype is torch.float32 or y_trues.dtype is torch.float64
+            loss = self.loss_fn(logits, y_trues.float())
+        else:
+            if y_trues.dtype is torch.int32:
+                loss = self.loss_fn(logits, y_trues.long())
+            else:
+                assert y_trues.dtype is torch.long or y_trues.dtype is torch.int64
+                loss = self.loss_fn(logits, y_trues)
+
+        return loss
+
+    @staticmethod
+    def __get_metrics(y_trues, y_preds):
+        accuracy = (np.asarray(y_preds) == np.asarray(y_trues)).mean()
+        precision, recall, f1 = precision_recall_f1_score(y_trues, y_preds)
+        return accuracy, precision, recall, f1
+
+    def fit(self,
+            train_data: Tuple[Any, list],
+            eval_data: Tuple[Any, list] = None,
+            *args,
+            **kwargs) -> Tuple[float, float, float, float, float]:
+
+        best_loss, best_acc, best_prec, best_recall, best_f1 = super().fit(train_data=train_data, eval_data=eval_data)
+
+        # unpack train data and labels
         xs_train, ys_train = train_data
+
+        # TODO: here initiate a multi-class classification dataset default, which should be more options
         train_dataset = TextMCCDataset(xs_train, ys_train)
         train_sampler = torch.utils.data.RandomSampler(train_dataset)
 
@@ -125,50 +193,34 @@ class PyTorchTrainer(Trainer):
 
             # Reset tracking variables at the beginning of each epoch
             total_train_loss = 0
-            preds = torch.tensor([], dtype=torch.int, device=self.device)
-            trues = torch.tensor([], dtype=torch.int, device=self.device)
+
+            y_preds = torch.zeros(len(train_dataset), dtype=torch.int, device=self.device)
+            y_trues = torch.zeros(len(train_dataset), dtype=torch.int, device=self.device)
 
             # Put the model into the training mode
             self.model.train()
             self.model.to(self.device)
 
-            # For each batch of training data...
-            for step, (data, label) in enumerate(train_dataloader):
+            # for each batch
+            for batch_i, (batch_data, lens, batch_labels) in enumerate(train_dataloader):
 
-                # self.optimizer.zero_grad()
+                start_index = batch_i * self.train_config.train_batch_size
 
-                data, y_true = data.to(self.device), label.to(self.device)
-                trues = torch.cat((trues, y_true))
+                batch_data, lens, sorted_index, unsorted_index = sort_sequences(batch_data, lens)
+                batch_labels = batch_labels[sorted_index]
 
-                # Perform a forward pass. This will return logits.
-                if self.train_config.fp16:
-                    with torch.cuda.amp.autocast():
-                        logits = self.model(data)
-                else:
-                    logits = self.model(data)
+                batch_data, batch_y_trues = batch_data.to(self.device), batch_labels.to(self.device)
+                y_trues[start_index: start_index + len(batch_data)] = batch_y_trues
 
-                if self.train_config.binary_out:
-                    logits = logits.squeeze(1)
+                # forward
+                logits = self.__forward(batch_data, lens, mode="train")
 
-                # batch_preds = torch.argmax(logits, dim=1).flatten()
-                # Get the predictions
-                if self.train_config.binary_out:
-                    batch_preds = torch.round(torch.sigmoid(logits))
-                else:
-                    batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
-                preds = torch.cat((preds, batch_preds))
+                # predict
+                batch_y_preds = self.__get_predicts(logits)
+                y_preds[start_index: start_index + len(batch_data)] = batch_y_preds
 
-
-                if self.train_config.binary_out:
-                    assert y_true.dtype is torch.float\
-                           or y_true.dtype is torch.float32 or y_true.dtype is torch.float64
-                    loss = self.loss_fn(logits, y_true.float())
-                else:
-                    if y_true.dtype is torch.int32:
-                        loss = self.loss_fn(logits, y_true.long())
-                    else:
-                        assert y_true.dtype is torch.long or y_true.dtype is torch.int64
-                        loss = self.loss_fn(logits, y_true)
+                # loss
+                loss = self.__get_loss(logits, batch_y_trues)
 
                 total_train_loss += loss.item()
 
@@ -181,21 +233,23 @@ class PyTorchTrainer(Trainer):
                 # Clip the norm of the gradients to 1.0 to prevent "exploding gradients"
                 torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
 
-                # Update parameters and the learning rate
+                # update parameters and the learning rate
                 if self.train_config.fp16:
                     scaler.step(self.optimizer)
                     scaler.update()
                 else:
                     self.optimizer.step()
+                    self.scheduler.step(total_train_loss)
 
-            # Calculate the average loss over the entire training data
+            # average train loss per sample
             avg_train_loss = total_train_loss / len(train_dataloader)
 
-            preds = preds.cpu().detach().numpy()
+            y_preds = y_preds.cpu().detach().numpy()
+
             if self.train_config.binary_out:
-                trues = torch.argmax(trues, dim=2).cpu().detach().numpy().reshape(-1)
+                y_trues = torch.argmax(y_trues, dim=2).cpu().detach().numpy().reshape(-1)
             else:
-                trues = trues.cpu().detach().numpy().reshape(-1)
+                y_trues = y_trues.cpu().detach().numpy().reshape(-1)
 
             train_acc = (np.asarray(preds) == np.asarray(trues)).mean()
             train_prec, train_recall, train_f1 = precision_recall_f1_score(trues, preds)
@@ -204,9 +258,10 @@ class PyTorchTrainer(Trainer):
             print(f"The {epoch_i}th epoch train completed, cost {time_elapsed:.3f} seconds.")
             report_metrics(avg_train_loss, train_acc, train_prec, train_recall, train_f1)
 
+            # to evaluate
             if eval_data is not None:
-                # After the completion of each training epoch, measure the model's performance
-                # on our validation set.
+
+                print("Start evaluation:")
                 eval_loss, eval_acc, eval_prec, eval_recall, eval_f1 = self.evaluate(eval_data=eval_data)
 
                 # Print performance over the entire training data
@@ -216,100 +271,113 @@ class PyTorchTrainer(Trainer):
                 # early_stopping needs the validation loss to check if it has decresed,
                 # and if it has, it will make a checkpoint of the current model
                 early_stopping(eval_loss, self.model)
+
                 if early_stopping.early_stop:
                     print("Early stop triggered by eval loss.")
                     best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
                     break
                 else:
-                    # FIXME
+                    # FIXME: record the best metrics
                     best_loss, best_acc, best_prec, best_recall, best_f1 = eval_loss, eval_acc, eval_prec, eval_recall, eval_f1
             else:
+
                 early_stopping(avg_train_loss, self.model)
+
                 if early_stopping.early_stop:
                     print("Early stop triggered by eval loss.")
-                    best_loss = eval_loss
+                    best_loss = avg_train_loss
                     break
+                else:
+                    best_loss, best_acc, best_prec, best_recall, best_f1 = avg_train_loss, train_acc, train_prec, train_recall, train_f1
 
         print("Training complete!")
         return best_loss, best_acc, best_prec, best_recall, best_f1
 
-    def evaluate(self, eval_data):
-        super().evaluate(eval_data=eval_data)
+    def evaluate(self,
+                 eval_data: Tuple[Any, list],
+                 *args,
+                 **kwargs) -> Tuple[float, float, float, float, float]:
 
+        total_loss, accuracy, precision, recall, f1 = super().evaluate(eval_data=eval_data)
+
+        # unpack evaluation data
         xs_eval, ys_eval = eval_data
         eval_dataset = TextMCCDataset(xs_eval, ys_eval)
         eval_sampler = torch.utils.data.RandomSampler(eval_dataset)
-        eval_dataloader = torch.utils.data.DataLoader(eval_dataset, sampler=eval_sampler,
+        eval_dataloader = torch.utils.data.DataLoader(eval_dataset,
+                                                      sampler=eval_sampler,
                                                       batch_size=self.train_config.eval_batch_size)
 
         self.model.eval()
-        loss = 0.0
-        y_preds = torch.tensor([], dtype=torch.int, device=self.device)
-        y_true = torch.tensor([], dtype=torch.int, device=self.device)
+        y_preds = torch.zeros(len(eval_data), dtype=torch.int, device=self.device)
+        y_trues = torch.tensor(len(eval_data), dtype=torch.int, device=self.device)
 
-        # For each batch in our validation set...
-        for batch in eval_dataloader:
-            batch_data, batch_labels = batch[0].to(self.device), batch[1].to(self.device)
+        for batch_i, (batch_data, lens, batch_labels) in enumerate(eval_dataloader):
 
-            # Compute logits
-            with torch.no_grad():
-                logits = self.model(batch_data)
+            start_i = batch_i * self.train_config.eval_batch_size
 
-            if self.train_config.binary_out:
-                logits = logits.squeeze(1)
+            batch_data, lens, sorted_index, unsorted_index = sort_sequences(batch_data, lens)
+            batch_labels = batch_labels[sorted_index]
 
-            # Compute loss of current batch
-            if batch_labels.dtype is torch.int32:
-                batch_loss = self.loss_fn(logits, batch_labels.long())
-            else:
-                assert batch_labels.dtype is torch.long or batch_labels.dtype is torch.int64
-                batch_loss = self.loss_fn(logits, batch_labels)
-            loss += batch_loss.item()
+            batch_data, batch_y_trues = batch_data.to(self.device), batch_labels.to(self.device)
 
-            # Get the predictions
-            if self.train_config.binary_out:
-                batch_preds = torch.round(torch.sigmoid(logits))
-            else:
-                batch_preds = torch.argmax(torch.softmax(logits, dim=1), dim=1).flatten()
+            logits = self.__forward(batch_data, lens, mode="eval")
 
-            y_preds = torch.cat((y_preds, batch_preds))
-            y_true = torch.cat((y_true, batch_labels))
+            batch_y_preds = self.__get_predicts(logits)
+
+            loss = self.__get_loss(logits, batch_y_trues)
+
+            total_loss += loss.item()
+
+            y_preds[start_i: start_i + len(batch_data)] = batch_y_preds
+            y_trues[start_i: start_i + len(batch_data)] = batch_y_trues
 
         # Compute the average accuracy and loss over the validation set.
-        loss = loss / len(eval_dataloader)
+        total_loss = total_loss / len(eval_dataloader)
 
         if self.train_config.binary_out:
-            y_true = torch.argmax(y_true, dim=2).cpu().detach().numpy().reshape(-1)
+            y_trues = torch.argmax(y_trues, dim=2).cpu().detach().numpy().reshape(-1)
         else:
-            y_true = y_true.cpu().detach().numpy()
+            y_trues = y_trues.cpu().detach().numpy()
         y_preds = y_preds.cpu().detach().numpy().reshape(-1)
 
-        accuracy = (np.asarray(y_preds) == np.asarray(y_true)).mean()
-        precision, recall, f1 = precision_recall_f1_score(y_true, y_preds)
+        confusion_matrix = get_confusion_matrix(y_trues, y_preds)
 
-        return loss, accuracy, precision, recall, f1
+        accuracy, precision, recall, f1 = PyTorchTrainer.__get_metrics(y_trues, y_preds)
 
-    def predict(self, test_data):
+        return total_loss, accuracy, precision, recall, f1
+
+    def predict(self, test_data: Tuple[Any, list]) -> Tuple[np.array, np.array]:
 
         self.model.eval()
 
-        test_dataset = TextMCCDataset(test_data, None)
+        test_dataset = TextMCCDataset(test_data)
 
         test_dataloader = torch.utils.data.DataLoader(
             test_dataset,
             batch_size=self.train_config.eval_batch_size
         )
 
-        logits = torch.zeros((len(test_data), 35), device=self.device, dtype=torch.float32)
-        preds = torch.tensor([], device=self.device, dtype=torch.int)
+        logits = torch.zeros((len(test_data[0]), 35), device=self.device, dtype=torch.float32)
+
+        preds = torch.zeros(len(test_data[0]), device=self.device, dtype=torch.int)
 
         with torch.no_grad():
-            for i, data in enumerate(test_dataloader):
+            for i, (data, lens) in enumerate(test_dataloader):
+
+                start_index = i * self.train_config.eval_batch_size
+
+                data, lens, _, unsorted_index = sort_sequences(data, lens)
+
                 data = data.to(self.device)
-                batch_logits = self.model(data)
+
+                batch_logits = self.model(data, lens)
+
                 batch_preds = torch.argmax(torch.softmax(batch_logits, dim=1), dim=1).flatten()
-                logits[i:i + len(data)] = batch_logits
-                preds = torch.cat((preds, batch_preds))
+
+                logits[start_index: start_index + len(data)] = batch_logits
+
+                preds[start_index:start_index + len(data)] = batch_preds[unsorted_index]
 
         return logits.detach().cpu().numpy(), preds.detach().cpu().numpy()
 
