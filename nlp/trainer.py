@@ -1,8 +1,9 @@
 from dataclasses import dataclass
+from typing import Any, Tuple
 
 import numpy as np
 
-from train.dataset import TextDataset
+from nlp.dataset import TextDataset
 
 
 @dataclass

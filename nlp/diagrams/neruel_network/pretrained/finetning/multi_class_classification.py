@@ -8,7 +8,7 @@ from transformers import BertModel, BertForSequenceClassification, Trainer
 from transformers import AdamW, get_linear_schedule_with_warmup
 
 from nlp.trainer import SupervisedNNModelTrainConfig
-from train.torch.nlp.network.bert import BertModelConfig, BertTrainerBase
+from nlp.diagrams.neruel_network.pretrained.finetning import BertModelConfig, BertTrainerBase
 from util.metric import transformers_aprf_metrics, precision_recall_f1_score
 
 

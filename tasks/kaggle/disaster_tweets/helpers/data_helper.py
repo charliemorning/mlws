@@ -6,7 +6,7 @@ import emoji
 from tqdm import tqdm
 import pandas as pd
 
-from nlp.preprocess import NLTKTokenizer
+from nlp.preprocess.text.tokenize import NLTKTokenizer
 from nlp.dataset import TextDataset
 from util.model import load_embedding_index, rebuild_embedding_index, build_embedding_matrix
 

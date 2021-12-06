@@ -1,4 +1,4 @@
-from models.torch.trainer import SupervisedNNModelTrainConfig, Trainer
+from nlp.trainer import SupervisedNNModelTrainConfig, Trainer
 
 
 class KerasTrainer(Trainer):

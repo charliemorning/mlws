@@ -4,8 +4,8 @@ from collections import Counter
 import numpy as np
 from sklearn.model_selection import KFold, StratifiedKFold
 
-from train.trainer import Trainer
-from train.dataset import TextDataset
+from nlp.trainer import Trainer
+from nlp.dataset import TextDataset
 from util.metric import report_metrics
 from util.math import softmax
 

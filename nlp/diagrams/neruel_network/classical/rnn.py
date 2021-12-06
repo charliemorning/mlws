@@ -3,8 +3,9 @@ from dataclasses import dataclass
 import torch
 import torch.nn as nn
 
-from framework.torch.layers.rnn import LSTM
-from framework.torch.layers.linear import Linear
+from playground.nlp.framework.torch.layers.rnn import LSTM
+from playground.nlp.framework.torch.layers.linear import Linear
+from nlp.diagrams.neruel_network.classical.attention import Attention
 
 
 @dataclass

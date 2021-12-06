@@ -2,8 +2,8 @@ from collections import Counter
 
 import numpy as np
 
-from nlp.preprocess import Tokenizer
-from nlp.preprocess.feature import build_label_index, build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
+from nlp.preprocess.text.tokenize import Tokenizer
+from nlp.preprocess.feature.transform import build_label_index, build_word_index_and_counter, transform_token_seqs_to_word_index_seqs
 from util.eda import SequenceStatistics
 
 

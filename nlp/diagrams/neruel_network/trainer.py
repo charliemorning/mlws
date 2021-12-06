@@ -1,13 +1,13 @@
 import time
+from typing import Tuple, Any
 
 import torch
 import torch.nn as nn
 import numpy as np
 
 
-from train.torch.nlp.dataset import TextMCCDataset
-from train.dataset import TextDataset
-from train.trainer import SupervisedNNModelTrainConfig, Trainer
+from nlp.diagrams.neruel_network.dataset import TextMCCDataset
+from nlp.trainer import SupervisedNNModelTrainConfig, Trainer
 from util.metric import get_confusion_matrix, report_metrics, precision_recall_f1_score
 
 
@@ -251,8 +251,8 @@ class PyTorchTrainer(Trainer):
             else:
                 y_trues = y_trues.cpu().detach().numpy().reshape(-1)
 
-            train_acc = (np.asarray(preds) == np.asarray(trues)).mean()
-            train_prec, train_recall, train_f1 = precision_recall_f1_score(trues, preds)
+            train_acc = (np.asarray(y_preds) == np.asarray(y_trues)).mean()
+            train_prec, train_recall, train_f1 = precision_recall_f1_score(y_trues, y_preds)
 
             time_elapsed = time.time() - t0_epoch
             print(f"The {epoch_i}th epoch train completed, cost {time_elapsed:.3f} seconds.")

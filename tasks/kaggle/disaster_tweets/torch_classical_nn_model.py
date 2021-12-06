@@ -1,6 +1,6 @@
 import argparse
 
-from playground.nlp.framework import Transformer as Transformer_
+from playground.nlp.framework.torch.layers.transformer import Transformer as Transformer_
 
 from train.cross_valid import CVFramework
 from nlp.trainer import SupervisedNNModelTrainConfig
@@ -9,7 +9,7 @@ from nlp.diagrams.neruel_network.classical.fast_text import FastTextConfig, Fast
 from nlp.diagrams.neruel_network.classical.cnn import PoolingType, TextCNNModelConfig, TextCNN
 from nlp.diagrams.neruel_network.classical.rnn import TextRNNModelConfig, TextRNN
 from nlp.diagrams.neruel_network.classical.transformer import TransformerConfig, Transformers
-from tasks.kaggle.disaster_tweets.data_helper import prepare_data_for_cnn_and_rnn
+from tasks.kaggle.disaster_tweets.helpers.data_helper import prepare_data_for_cnn_and_rnn
 
 
 def fast_text_model(vocab_size, embedding_matrix):

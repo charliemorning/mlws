@@ -4,7 +4,7 @@ import pandas as pd
 import gensim
 
 from nlp.dataset import TextDataset
-from nlp.preprocess import NGramTokenizer
+from nlp.preprocess.text.tokenize import NGramTokenizer
 from util.model import load_embedding_index
 
 

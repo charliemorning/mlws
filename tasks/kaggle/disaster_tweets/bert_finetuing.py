@@ -3,7 +3,7 @@ import argparse
 
 import pandas as pd
 
-from models.tf.nlp.bert.bert_models import BertTrainer
+from nlp.diagrams.neruel_network.pretrained.bert.bert_models import BertTrainer
 from util.corpus import train_test_split_from_data_frame
 from util.label import encode_labels
 

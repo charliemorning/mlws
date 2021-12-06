@@ -6,7 +6,7 @@ import torch
 from transformers import BertConfig, BertTokenizer, TrainingArguments
 from transformers.trainer_utils import EvaluationStrategy
 
-from models.trainer import SupervisedNNModelTrainConfig, Trainer
+from nlp.trainer import SupervisedNNModelTrainConfig, Trainer
 
 
 def set_seed(seed_value=42):

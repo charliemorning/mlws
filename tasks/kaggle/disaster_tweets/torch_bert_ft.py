@@ -1,15 +1,16 @@
 import os
 
-from models.torch.trainer import SupervisedNNModelTrainConfig
-from models.torch.nlp.network.bert.text_cls_ft import BertModelConfig, TextClsCustomedBertTrainer
+from nlp.trainer import SupervisedNNModelTrainConfig
+from nlp.diagrams.neruel_network.pretrained.finetning.multi_class_classification import BertModelConfig, TextClsCustomedBertTrainer
 from util.corpus import train_test_split_from_data_frame
-from tasks.kaggle.disaster_tweets import prepare_data
+from tasks.kaggle.disaster_tweets.helpers.data_helper import prepare_data
 
+DATA_HOME = r"C:\Users\charlie\developer\data\nlp\compete\kaggle\nlp-getting-started"
 MODEL_HOME = r"L:\developer\model\bert-base-uncased"
 
 
 def main():
-    df = prepare_data()
+    df = prepare_data(DATA_HOME)
     train_df, dev_df = train_test_split_from_data_frame(df)
 
     xs_train = train_df["text"].tolist()
@@ -25,8 +26,8 @@ def main():
         epoch=20,
         train_batch_size=64,
         eval_batch_size=64,
-        logging_dir="L:/tmp/logging",
-        output_dir="L:/tmp/output",
+        logging_dir=os.pardir.join(DATA_HOME, "logging"),
+        output_dir=os.pardir.join(DATA_HOME, "output"),
         warmup_steps=500,
         dim_out=1
     )
