@@ -1,5 +1,5 @@
 import os
-from nlp.preprocess.feature import build_word_index_and_counter, transform_token_seqs_to_word_index_seqs, transoform_seq_to_one_hot
+from nlp.preprocess.feature.transform import build_word_index_and_counter, transform_sequences_to_index_sequences, transform_sequences_to_one_hot_matrix
 
 DATA_HOME = r"L:\developer\msra"
 
@@ -37,10 +37,10 @@ def prepare_for_data():
 
     label_index, _ = build_word_index_and_counter(labels, with_unknown=False, start_from=0)
 
-    xs_seq_train = transform_token_seqs_to_word_index_seqs(xs_train, 128, word_index=word_index)
-    xs_seq_test = transform_token_seqs_to_word_index_seqs(xs_test, 128, word_index=word_index)
+    xs_seq_train = transform_sequences_to_index_sequences(xs_train, 128, word_index=word_index)
+    xs_seq_test = transform_sequences_to_index_sequences(xs_test, 128, word_index=word_index)
 
-    ys_index_train = transoform_seq_to_one_hot(ys_train, 128, word_index=label_index)
-    ys_index_test = transoform_seq_to_one_hot(ys_test, 128, word_index=label_index)
+    ys_index_train = transform_sequences_to_one_hot_matrix(ys_train, 128, word_index=label_index)
+    ys_index_test = transform_sequences_to_one_hot_matrix(ys_test, 128, word_index=label_index)
 
     return xs_seq_train, ys_index_train, xs_seq_test, ys_index_test, word_index, label_index
